@@ -1,0 +1,21 @@
+# secrets
+.env
+*.env.local
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+# node
+node_modules/
+dist/
+frontend/test-results/
+frontend/playwright-report/
+# ml artefacts are rebuilt by ml/train.py (metrics are committed)
+ml/artifacts/*.joblib
+# local
+.claude/settings.local.json
+*.log
+.DS_Store

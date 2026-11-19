@@ -1,0 +1,1952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FishFarm</title>
+<meta name="description" content="Live water quality, alerts and an AI assistant for every basin of your fish farm.">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a bright surface world on top, the basin's water underneath —
+   every section dives a little deeper, ending in the pre-dawn night shift. */
+:root{
+  --ink:#0c1d22;          /* deep-water text */
+  --deep:#0f3a42;         /* basin floor, primary buttons */
+  --current:#1d6f6a;      /* teal accent */
+  --reed:#8dbb63;         /* reed green, 3rd step */
+  --aqua:#cfe8e1;         /* ticket cards, footer */
+  --foam:#eef6f3;         /* soft surfaces */
+  --line:#e2ebe7;
+  --paper:#ffffff;
+  --bg:#e4efeb;
+  --muted:#4f6268;
+  --ok:#2e9b6f; --warn:#d98a1c; --crit:#d6453d;
+  --display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body:"Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono:"Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius:22px;
+  color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg)}
+html.lenis, html.lenis body{height:auto}
+.lenis.lenis-smooth{scroll-behavior:auto!important}
+body{font-family:var(--body);color:var(--ink);background:var(--bg);overflow-x:hidden;-webkit-font-smoothing:antialiased;line-height:1.45}
+img,svg,canvas{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--current);outline-offset:3px;border-radius:6px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance}
+
+/* shared */
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:500;padding:5px 11px;border-radius:999px;background:var(--aqua);color:#123a3a;letter-spacing:.01em}
+.pill i{width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(46,155,111,.18)}
+.h2{font-size:clamp(28px,3.4vw,50px);font-weight:400;letter-spacing:-.035em;line-height:1.06;text-align:center;font-variation-settings:"opsz" 96}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:38px;padding:0 18px;border-radius:999px;background:var(--deep);color:#e9f6f2;font-size:13.5px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 2px 8px rgba(15,58,66,.28);transition:transform .3s,background .3s}
+.btn:hover{transform:translateY(-1px);background:#14525b}
+.btn.ghost{background:rgba(255,255,255,.7);color:var(--deep);box-shadow:0 0 0 1px rgba(15,58,66,.14)}
+.btn.ghost:hover{background:#fff}
+.w{display:inline-block;will-change:transform,filter,opacity}
+.glass{position:absolute;border-radius:12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.5);backdrop-filter:blur(10px) saturate(1.2);-webkit-backdrop-filter:blur(10px) saturate(1.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
+.grid-sq{position:absolute;border:1px solid #e3ece8;border-radius:10px;pointer-events:none}
+@keyframes driftA{to{transform:translate(26px,4px)}}
+@keyframes driftB{to{transform:translate(-30px,6px)}}
+.drift-a{animation:driftA 14s ease-in-out infinite alternate}
+.drift-b{animation:driftB 17s ease-in-out infinite alternate}
+
+/* intro */
+.backdrop{position:fixed;inset:-40px;z-index:0;background:
+  radial-gradient(60% 50% at 30% 30%,#ffffff 0,transparent 70%),
+  radial-gradient(50% 60% at 70% 80%,#2d8a80 0,transparent 70%),
+  radial-gradient(60% 60% at 20% 90%,#0f3a42 0,transparent 75%),
+  linear-gradient(#dff0ea,#8cc4b8);filter:blur(18px) saturate(1.1);transform:scale(1.3)}
+#site{position:relative;z-index:1;background:var(--paper);transform-origin:50% 50vh;overflow:clip}
+body.intro #site{transform:scale(.9);border-radius:28px}
+
+/* HERO */
+.hero{position:relative;height:100vh;min-height:640px;overflow:hidden;background:linear-gradient(#ffffff 0,#f4faf8 40%,#e9f4f0 100%)}
+.nav{position:absolute;top:22px;left:50%;transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:30px;padding:5px 5px 5px 16px;border-radius:999px;background:rgba(255,255,255,.9);box-shadow:0 0 0 1px rgba(0,0,0,.05),0 6px 18px rgba(12,29,34,.07);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.brand{display:flex;align-items:center;gap:7px;font-family:var(--display);font-size:21px;font-weight:600;letter-spacing:-.04em;color:var(--deep)}
+.brand svg{width:30px;height:20px}
+.nav-links{display:flex;gap:22px;font-size:13.5px;color:var(--muted)}
+.nav-links a:hover{color:var(--ink)}
+.mist{position:absolute;z-index:3;pointer-events:none;border-radius:50%;filter:blur(30px)}
+.mist-l{top:-6%;left:-8%;width:min(46vw,660px);height:220px;background:radial-gradient(closest-side,rgba(207,232,225,.95),rgba(207,232,225,0))}
+.mist-r{top:4%;right:-8%;width:min(42vw,600px);height:200px;background:radial-gradient(closest-side,rgba(220,238,246,.95),rgba(220,238,246,0))}
+.hero-copy{position:absolute;z-index:6;top:22%;left:0;right:0;text-align:center;padding:0 16px;display:flex;flex-direction:column;align-items:center;gap:20px}
+#heroTitle{font-size:clamp(38px,6vw,88px);font-weight:400;letter-spacing:-.05em;line-height:.98;font-variation-settings:"opsz" 96}
+#heroTitle em{font-style:normal;font-weight:600;color:var(--current)}
+#heroTitle em .w{text-decoration:underline wavy rgba(29,111,106,.45);text-decoration-thickness:.045em;text-underline-offset:.16em;text-decoration-skip-ink:none}
+.hero-sub{max-width:52ch;font-size:15.5px;color:var(--muted)}
+.hero-ctas{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.hero-media{position:absolute;left:0;right:0;bottom:0;height:60%;z-index:2;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 26%);mask-image:linear-gradient(to bottom,transparent 0,#000 26%)}
+.hero-media canvas{width:100%;height:100%}
+.hero-glass{position:absolute;inset:0;z-index:5;pointer-events:none}
+.reading{position:absolute;z-index:6;display:grid;grid-template-columns:auto auto;align-items:baseline;column-gap:6px;padding:10px 14px 11px;border-radius:14px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.55);backdrop-filter:blur(12px) saturate(1.2);-webkit-backdrop-filter:blur(12px) saturate(1.2);color:#f2fbf8;box-shadow:0 10px 30px rgba(4,30,34,.18)}
+.reading .lbl{grid-column:1/-1;display:flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.02em;opacity:.9}
+.reading .lbl i{width:6px;height:6px;border-radius:50%;background:#7ff0be;box-shadow:0 0 0 0 rgba(127,240,190,.6);animation:ping 2s infinite}
+.reading b{font-family:var(--mono);font-size:24px;font-weight:500;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.reading span.u{font-size:12px;opacity:.85}
+@keyframes ping{70%{box-shadow:0 0 0 7px rgba(127,240,190,0)}100%{box-shadow:0 0 0 0 rgba(127,240,190,0)}}
+
+/* STATS */
+.stats{position:relative;height:100vh;min-height:700px;overflow:hidden;background:var(--paper)}
+#statsWater{position:absolute;inset:0;z-index:1;width:100%;height:100%}
+.stats-inner{position:relative;z-index:3;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:0 16px}
+.stats .h2{margin-bottom:14px}
+.cards{position:relative;z-index:4;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:min(900px,100%)}
+.card{height:156px;padding:18px 22px;border-radius:var(--radius);background:var(--aqua);display:flex;flex-direction:column;justify-content:space-between;
+  -webkit-mask:radial-gradient(circle 17px at 0 55%,#0000 97%,#000) left/51% 100% no-repeat,radial-gradient(circle 17px at 100% 55%,#0000 97%,#000) right/51% 100% no-repeat;
+  mask:radial-gradient(circle 17px at 0 55%,#0000 97%,#000) left/51% 100% no-repeat,radial-gradient(circle 17px at 100% 55%,#0000 97%,#000) right/51% 100% no-repeat}
+.card small{font-size:11px;font-weight:500;color:#25484a;max-width:18ch;line-height:1.3}
+.card b{font-family:var(--display);font-size:clamp(32px,3.6vw,48px);font-weight:600;letter-spacing:-.045em;color:#0b2a2e;font-variant-numeric:tabular-nums;line-height:1}
+.card b sup{font-size:.42em;letter-spacing:0;margin-left:2px;vertical-align:.95em;font-weight:500}
+.cards-shadow{width:min(840px,94%);height:10px;margin-top:-18px;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.08),transparent);z-index:3}
+.built{position:relative;z-index:6;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:10px 26px;padding:10px 22px;border-radius:999px;background:rgba(255,255,255,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 0 0 1px rgba(255,255,255,.6)}
+.built span{font-family:var(--display);font-size:19px;font-weight:600;letter-spacing:-.03em;color:#10282c;white-space:nowrap}
+.built span.l{font-family:var(--body);font-size:11.5px;font-weight:500;color:var(--muted);letter-spacing:.02em}
+.foot-note{position:relative;z-index:6;font-size:11px;color:#2c4a4e}
+
+/* LOOP */
+.loop{position:relative;height:100vh;min-height:700px;overflow:hidden;background:var(--paper)}
+.loop-head{position:absolute;z-index:4;top:9vh;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:16px;padding:0 16px;pointer-events:none}
+.track{position:absolute;inset:0;z-index:2;display:flex}
+.panel{position:relative;flex:0 0 clamp(96px,11vw,170px);height:100%;overflow:hidden;border-right:1px solid var(--line);cursor:pointer;outline:none;transition:flex-grow .9s cubic-bezier(.77,0,.18,1)}
+.panel:last-child{border-right:0}
+.panel.is-active{flex-grow:1;cursor:default}
+.panel:focus-visible{box-shadow:inset 0 0 0 2px var(--current)}
+.panel-in{position:absolute;left:clamp(14px,1.8vw,28px);bottom:10vh;display:flex;align-items:flex-end;gap:clamp(16px,2vw,30px);width:max-content}
+.num{font-family:var(--display);font-size:clamp(170px,36vh,380px);font-weight:600;line-height:.74;letter-spacing:-.07em;font-variant-numeric:tabular-nums}
+.panel:nth-child(1) .num{color:var(--deep)}
+.panel:nth-child(2) .num{color:var(--current)}
+.panel:nth-child(3) .num{color:var(--reed)}
+.step{position:relative;width:min(400px,30vw);padding-bottom:4px;opacity:0;transform:translateX(-24px);filter:blur(6px);transition:opacity .4s,transform .5s,filter .4s}
+.panel.is-active .step{opacity:1;transform:none;filter:none;transition:opacity .7s .4s,transform .9s .35s cubic-bezier(.2,.8,.2,1),filter .7s .4s}
+.step .tag{font-family:var(--mono);font-size:11px;color:var(--current);margin-bottom:10px;display:block}
+.step h3{font-size:clamp(22px,1.9vw,30px);font-weight:400;letter-spacing:-.035em;margin-bottom:12px}
+.step p{font-size:14.5px;line-height:1.5;color:#2b3a3d;max-width:42ch}
+.bubbles{position:absolute;left:-4%;bottom:calc(100% + clamp(50px,10vh,120px));width:90px;height:110px;pointer-events:none}
+.bubbles i{position:absolute;border-radius:50%;border:1.5px solid rgba(29,111,106,.45);background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.9),rgba(207,232,225,.3));animation:rise 6s ease-in-out infinite alternate}
+@keyframes rise{to{transform:translateY(-18px)}}
+
+/* ASSISTANT SHOWCASE */
+.assist{position:relative;background:linear-gradient(#ffffff,#eef6f3);padding:clamp(80px,12vh,140px) 4vw}
+.assist-grid{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1fr 1.1fr;gap:clamp(30px,5vw,80px);align-items:center}
+.assist-copy{display:flex;flex-direction:column;gap:20px;align-items:flex-start}
+.assist-copy .h2{text-align:left}
+.assist-copy p{max-width:48ch;color:var(--muted);font-size:15.5px}
+.ticks{list-style:none;display:grid;gap:10px;font-size:14.5px}
+.ticks li{display:flex;gap:10px;align-items:flex-start}
+.ticks li::before{content:"";flex:0 0 18px;height:18px;margin-top:1px;border-radius:50%;background:var(--aqua) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M5 9.4l2.6 2.5L13 6.4' fill='none' stroke='%230f3a42' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/18px no-repeat}
+.chat-demo{background:var(--paper);border-radius:24px;box-shadow:0 0 0 1px rgba(15,58,66,.08),0 30px 70px rgba(15,58,66,.14);padding:18px;display:flex;flex-direction:column;gap:12px}
+.chat-top{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:var(--muted);padding:0 4px 8px;border-bottom:1px solid var(--line)}
+.chat-top b{font-family:var(--display);font-size:16px;color:var(--ink);letter-spacing:-.02em}
+
+/* CTA */
+.cta{position:relative;height:110vh;min-height:740px;overflow:hidden;background:var(--paper)}
+.cta-img{position:absolute;left:0;right:0;bottom:0;height:80%;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 22%);mask-image:linear-gradient(to bottom,transparent 0,#000 22%)}
+#nightCanvas{width:100%;height:118%;display:block}
+.cta-card{position:absolute;z-index:4;left:50%;top:28%;transform:translateX(-50%);width:min(680px,calc(100% - 32px));padding:46px 28px 54px;text-align:center;border-radius:26px;background:linear-gradient(to bottom,rgba(255,255,255,.96) 0,rgba(255,255,255,.78) 38%,rgba(255,255,255,.12) 100%);border:1px solid rgba(255,255,255,.7);backdrop-filter:blur(16px) saturate(1.1);-webkit-backdrop-filter:blur(16px) saturate(1.1);box-shadow:0 30px 60px rgba(4,14,40,.22)}
+.cta-card .h2{margin:16px 0 12px;font-size:clamp(28px,3vw,44px)}
+.cta-card p{font-size:14.5px;color:#1d2a30;margin:0 auto 22px;max-width:44ch}
+
+/* FOOTER */
+footer{background:var(--aqua);padding:34px 4vw 22px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;row-gap:22px}
+.f-logo{width:72px;height:72px}
+.f-links{display:flex;gap:24px;font-size:13px;color:#163a3a}
+.f-links a:hover{text-decoration:underline}
+.f-social{display:flex;gap:16px;justify-self:end;font-size:12px;color:#163a3a;font-family:var(--mono)}
+.f-copy{grid-column:1/-1;text-align:center;font-size:11.5px;color:#28504f}
+
+/* ============ DEMO APP ============ */
+.app{position:fixed;inset:0;z-index:100;display:none;grid-template-columns:248px 1fr;background:#f3f7f5;font-size:14px}
+.side{background:var(--ink);color:#cfe1dc;display:flex;flex-direction:column;gap:18px;padding:18px 14px;overflow-y:auto}
+.side .brand{color:#eaf6f2;padding:4px 6px}
+.farm{padding:12px;border-radius:14px;background:rgba(255,255,255,.05);display:grid;gap:8px}
+.farm small{font-size:11px;color:#8fb0aa}
+.farm strong{font-family:var(--display);font-size:16px;color:#fff;font-weight:500;letter-spacing:-.02em}
+.role-sel{width:100%;height:34px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:#14313a;color:#eaf6f2;padding:0 10px;font:inherit;font-size:13px}
+.side nav{display:grid;gap:2px}
+.side nav button{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;padding:9px 12px;border-radius:10px;color:#b8d0ca;font-size:13.5px}
+.side nav button:hover{background:rgba(255,255,255,.06);color:#fff}
+.side nav button[aria-current="page"]{background:#1b4a51;color:#fff}
+.side nav .count{font-family:var(--mono);font-size:11px;padding:1px 7px;border-radius:999px;background:var(--crit);color:#fff}
+.side-foot{margin-top:auto;display:grid;gap:8px;font-size:12px;color:#8fb0aa}
+.side-foot button{color:#cfe1dc;text-align:left;font-size:12.5px}
+.side-foot button:hover{color:#fff}
+.main{display:flex;flex-direction:column;min-width:0;height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 28px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.75);backdrop-filter:blur(8px)}
+.topbar h1{font-size:22px;font-weight:500;letter-spacing:-.03em}
+.topbar .crumbs{font-size:12px;color:var(--muted)}
+.live{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);font-family:var(--mono)}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--ok);animation:ping 2s infinite;box-shadow:0 0 0 0 rgba(46,155,111,.5)}
+.content{flex:1;overflow-y:auto;padding:24px 28px 120px;display:grid;gap:18px;align-content:start;grid-auto-rows:max-content}
+.content > *{min-width:0}
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.tile{background:var(--paper);border-radius:16px;box-shadow:0 0 0 1px var(--line);padding:16px 18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.tile h3{font-size:15px;font-weight:600;letter-spacing:-.02em}
+.tile .k{font-size:12px;color:var(--muted)}
+.tile .v{font-family:var(--display);font-size:30px;font-weight:500;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1.05}
+.tile .v small{font-family:var(--body);font-size:13px;color:var(--muted);letter-spacing:0;margin-left:3px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:500;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.b-healthy{background:#e3f4ec;color:#1f7a55}
+.b-warning{background:#fbefdc;color:#a5650d}
+.b-critical{background:#fbe3e1;color:#b2322b}
+.b-info{background:#e6eef7;color:#305a8a}
+.b-est{background:#efeaf8;color:#5a4691}
+.b-est::before{display:none}
+.mini{font-size:12px;color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.small-btn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:999px;font-size:12.5px;font-weight:500;background:var(--foam);color:var(--deep);box-shadow:0 0 0 1px rgba(15,58,66,.1)}
+.small-btn:hover{background:var(--aqua)}
+.small-btn.primary{background:var(--deep);color:#eaf6f2;box-shadow:none}
+.small-btn.primary:hover{background:#14525b}
+.spark{width:100%;height:36px}
+.chart svg{width:100%;height:auto}
+.chart text{font-family:var(--mono);font-size:10.5px;fill:#6b7f84}
+.basin-card{cursor:pointer;transition:box-shadow .2s,transform .2s}
+.basin-card:hover{box-shadow:0 0 0 1px rgba(29,111,106,.35),0 10px 24px rgba(15,58,66,.08);transform:translateY(-2px)}
+.readings3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.readings3 div{background:var(--foam);border-radius:10px;padding:8px 10px;display:grid;gap:2px}
+.readings3 span{font-size:11px;color:var(--muted)}
+.readings3 b{font-family:var(--mono);font-size:15px;font-weight:500}
+.readings3 b.bad{color:var(--crit)} .readings3 b.meh{color:var(--warn)}
+.briefing{background:linear-gradient(135deg,#0f3a42,#1d6f6a);color:#eaf6f2;box-shadow:none}
+.briefing h3{color:#fff;font-size:17px}
+.briefing ul{list-style:none;display:grid;gap:7px;font-size:13.5px}
+.briefing li{display:flex;gap:9px}
+.briefing li::before{content:"";flex:0 0 6px;height:6px;margin-top:7px;border-radius:50%;background:#9fe0c8}
+.briefing .k{color:#a9cfc6}
+.briefing .small-btn{background:rgba(255,255,255,.12);color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.2)}
+.alert{display:grid;grid-template-columns:4px 1fr auto;gap:14px;align-items:center;background:var(--paper);border-radius:14px;box-shadow:0 0 0 1px var(--line);padding:14px 16px 14px 0;overflow:hidden}
+.alert .stripe{align-self:stretch;border-radius:0 4px 4px 0}
+.sev-high .stripe,.sev-critical .stripe{background:var(--crit)}
+.sev-medium .stripe{background:var(--warn)}
+.sev-low .stripe{background:#7a9ad0}
+.alert h4{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.alert p{font-size:12.5px;color:var(--muted)}
+.alert .acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.alert.done{opacity:.55}
+.tabs{display:inline-flex;padding:3px;border-radius:999px;background:var(--foam);gap:2px}
+.tabs button{padding:5px 12px;border-radius:999px;font-size:12.5px;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--paper);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:11.5px;font-weight:500;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.table-wrap{overflow-x:auto}
+.switch{position:relative;width:30px;height:18px;border-radius:999px;background:#d3dedb;transition:background .2s;flex:0 0 auto}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:transform .2s}
+.switch[aria-checked="true"]{background:var(--current)}
+.switch[aria-checked="true"]::after{transform:translateX(12px)}
+.perm{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);margin-right:10px}
+.field{display:grid;gap:6px;font-size:12.5px;color:var(--muted)}
+.field input,.field textarea,.field select{font:inherit;font-size:14px;color:var(--ink);border:1px solid #d5e1dd;border-radius:10px;padding:9px 11px;background:#fff}
+.field textarea{min-height:110px;resize:vertical}
+.field input:focus,.field textarea:focus,.field select:focus{outline:2px solid rgba(29,111,106,.35);border-color:var(--current)}
+form.stack{display:grid;gap:12px}
+.fin input{width:100%;font-family:var(--mono);font-size:15px;border:1px solid #d5e1dd;border-radius:9px;padding:7px 9px}
+.list{display:grid;gap:10px}
+.report{display:grid;gap:4px;padding:14px 16px;border-radius:14px;background:var(--paper);box-shadow:0 0 0 1px var(--line);text-align:left;width:100%}
+.report:hover{box-shadow:0 0 0 1px rgba(29,111,106,.35)}
+.report p{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.risk-meter{height:8px;border-radius:999px;background:var(--foam);overflow:hidden}
+.risk-meter i{display:block;height:100%;border-radius:999px}
+.feat{display:grid;gap:6px;font-size:12.5px}
+.feat div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--line);padding-bottom:5px}
+.empty{padding:26px;text-align:center;color:var(--muted);font-size:13px}
+
+/* modal + toast */
+.modal-bg{position:fixed;inset:0;z-index:300;background:rgba(8,22,26,.45);display:none;align-items:center;justify-content:center;padding:16px}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:18px;width:min(520px,100%);max-height:86vh;overflow:auto;padding:22px;display:grid;gap:14px;box-shadow:0 30px 80px rgba(0,0,0,.25)}
+.modal h3{font-size:19px;font-weight:500;letter-spacing:-.02em}
+.toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:20px;z-index:400;display:grid;gap:8px;justify-items:center}
+.toast{background:var(--ink);color:#eaf6f2;font-size:13px;padding:11px 14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);animation:tin .35s ease-out;max-width:340px}
+.toast b{color:#9fe0c8}
+@keyframes tin{from{opacity:0;transform:translateY(10px)}}
+
+/* assistant panel */
+.fab{position:fixed;right:22px;bottom:22px;z-index:150;display:none;align-items:center;gap:9px;height:48px;padding:0 18px 0 14px;border-radius:999px;background:var(--deep);color:#eaf6f2;font-weight:600;font-size:14px;box-shadow:0 12px 30px rgba(15,58,66,.35)}
+.fab svg{width:22px;height:22px}
+.panel-ai{position:fixed;top:0;right:0;bottom:0;width:min(430px,100vw);z-index:200;background:#fbfdfc;box-shadow:-20px 0 60px rgba(8,22,26,.18);display:flex;flex-direction:column;transform:translateX(105%);visibility:hidden;transition:transform .45s cubic-bezier(.2,.8,.2,1),visibility 0s .45s}
+.panel-ai.open{transform:none;visibility:visible;transition:transform .45s cubic-bezier(.2,.8,.2,1),visibility 0s}
+.ai-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.ai-head b{font-family:var(--display);font-size:18px;letter-spacing:-.03em;font-weight:500}
+.ai-head .acts{display:flex;gap:6px;align-items:center}
+.demo-banner{margin:12px 18px 0;padding:8px 12px;border-radius:10px;background:#efeaf8;color:#4c3b80;font-size:12px}
+.ai-body{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.ai-empty{display:grid;gap:12px;font-size:13.5px;color:var(--muted)}
+.ai-empty strong{font-family:var(--display);font-size:21px;font-weight:500;color:var(--ink);letter-spacing:-.03em}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font-size:12.5px;padding:7px 11px;border-radius:12px;background:#fff;box-shadow:0 0 0 1px #d6e3df;text-align:left;color:var(--deep)}
+.chip:hover{box-shadow:0 0 0 1px var(--current);background:var(--foam)}
+.msg-user{align-self:flex-end;max-width:85%;background:var(--deep);color:#eaf6f2;padding:9px 13px;border-radius:16px 16px 4px 16px;font-size:13.5px}
+.msg-ai{display:grid;gap:10px;font-size:13.5px;line-height:1.55}
+.msg-ai p{margin:0}
+.msg-ai p+p,.msg-ai p+ol,.msg-ai p+ul,.msg-ai ol+p,.msg-ai ul+p{margin-top:8px}
+.tile .chart svg{max-height:320px}
+.msg-ai ul,.msg-ai ol{padding-left:18px;display:grid;gap:4px}
+.steps{display:flex;flex-wrap:wrap;gap:6px}
+.stepchip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;padding:4px 9px;border-radius:999px;background:var(--foam);color:#2f5458;font-family:var(--mono)}
+.stepchip .spin{width:10px;height:10px;border-radius:50%;border:2px solid #9cc5bc;border-top-color:var(--current);animation:spin .7s linear infinite}
+.stepchip .ok{color:var(--ok)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.srcs{display:flex;flex-wrap:wrap;gap:6px}
+.src{font-size:11.5px;padding:4px 9px;border-radius:8px;background:#fff;box-shadow:0 0 0 1px #dbe6e2;color:#2f5458}
+.src::before{content:"↗ ";color:var(--current)}
+.data-used{font-size:11.5px;color:var(--muted)}
+.data-used summary{cursor:pointer;color:var(--current);list-style:none}
+.data-used summary::-webkit-details-marker{display:none}
+.data-used pre{margin-top:6px;font-family:var(--mono);font-size:11px;background:var(--foam);border-radius:8px;padding:8px;white-space:pre-wrap}
+.approve{border-radius:14px;box-shadow:0 0 0 1px #cfe0db;background:#fff;padding:12px;display:grid;gap:10px}
+.approve .mini b{color:var(--ink)}
+.approve.done{background:#e3f4ec;box-shadow:none}
+.risk-cards{display:grid;gap:8px}
+.risk-cards div{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;background:#fff;border-radius:12px;box-shadow:0 0 0 1px var(--line);padding:10px 12px}
+.risk-cards .risk-meter{grid-column:1/-1}
+.fb{display:flex;gap:6px;align-items:center;font-size:11.5px;color:var(--muted)}
+.fb button{width:28px;height:28px;border-radius:8px;box-shadow:0 0 0 1px var(--line);font-size:13px}
+.fb button[aria-pressed="true"]{background:var(--aqua);box-shadow:0 0 0 1px var(--current)}
+.ai-input{display:flex;gap:8px;padding:12px 14px 16px;border-top:1px solid var(--line)}
+.ai-input input{flex:1;font:inherit;font-size:14px;border:1px solid #d5e1dd;border-radius:12px;padding:10px 12px}
+.ai-input input:focus{outline:2px solid rgba(29,111,106,.35);border-color:var(--current)}
+.cmp{display:grid;gap:6px}
+.cmp div{display:grid;grid-template-columns:72px 1fr 64px;gap:8px;align-items:center;font-size:12px}
+.cmp i{display:block;height:8px;border-radius:999px;background:var(--current)}
+
+
+/* ============ AUTH ============ */
+.auth{position:fixed;inset:0;z-index:90;display:none;grid-template-columns:1.05fr 1fr;background:var(--paper)}
+html.in-auth .auth{display:grid}
+html.in-auth body,html.in-app body{overflow:hidden}
+.auth-art{position:relative;overflow:hidden;background:#0c3038;color:#eaf6f2;display:flex;flex-direction:column;justify-content:space-between;padding:28px 34px}
+#authCanvas{position:absolute;inset:0;width:100%;height:100%}
+.auth-art > :not(canvas){position:relative;z-index:2}
+.auth-art .brand{color:#eaf6f2}
+.auth-quote{max-width:24ch;font-family:var(--display);font-size:clamp(28px,2.8vw,44px);font-weight:400;letter-spacing:-.045em;line-height:1.05;text-wrap:balance}
+.auth-quote em{font-style:normal;color:#9fe0c8}
+.auth-art .reading{position:relative;display:inline-grid;margin-top:22px}
+.auth-meta{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:12px;color:#a9cfc6;font-family:var(--mono)}
+.auth-side{display:flex;align-items:center;justify-content:center;padding:40px 20px;overflow-y:auto;background:linear-gradient(#ffffff,#f1f7f5)}
+.auth-card{width:min(420px,100%);display:grid;gap:18px}
+.auth-card h1{font-size:clamp(30px,3vw,38px);font-weight:400;letter-spacing:-.045em;line-height:1.04}
+.auth-card .lead{color:var(--muted);font-size:14px;margin-top:-6px}
+.seg{display:grid;grid-template-columns:1fr 1fr;padding:4px;border-radius:12px;background:var(--foam)}
+.seg button{padding:8px;border-radius:9px;font-size:13.5px;color:var(--muted);font-weight:500}
+.seg button[aria-selected="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.err{font-size:12px;color:var(--crit)}
+.err:empty{display:none}
+.field.invalid input,.field.invalid select{border-color:var(--crit)}
+.form-err{padding:10px 12px;border-radius:10px;background:#fbe3e1;color:#8e2a24;font-size:13px}
+.form-err a{text-decoration:underline}
+.demo-acc{display:grid;gap:10px;padding:14px;border-radius:14px;background:var(--foam);font-size:12.5px;color:var(--muted)}
+.demo-acc code{font-family:var(--mono);color:var(--deep)}
+.auth-switch{font-size:13px;color:var(--muted)}
+.auth-switch a{color:var(--current);font-weight:500}
+.btn.wide{width:100%;height:44px;font-size:14.5px}
+.pw{position:relative;display:block}
+.pw input{width:100%;padding-right:62px}
+.pw button{position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--current);padding:4px 8px;font-weight:500}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ============ APP SHELL EXTRAS ============ */
+html.in-app .app{display:grid}
+.side nav button .lbl{display:flex;align-items:center;gap:10px}
+.side nav button svg{opacity:.85}
+.role-chip{justify-self:start;display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:#1b4a51;color:#9fe0c8;letter-spacing:.06em;text-transform:uppercase}
+.user-card{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:rgba(255,255,255,.05)}
+.avatar{flex:0 0 auto;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600;background:var(--aqua);color:var(--deep)}
+.avatar.tech{background:#dfe8f5;color:#305a8a}
+.user-card .who{display:grid;flex:1;font-size:12.5px;line-height:1.3;min-width:0;color:#eaf6f2}
+.user-card .who span{color:#8fb0aa;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.icon-btn{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:inherit;flex:0 0 auto}
+.icon-btn:hover{background:rgba(127,160,155,.18)}
+.top-acts{display:flex;align-items:center;gap:8px;position:relative}
+.sim-btn{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:999px;font-size:12px;font-family:var(--mono);color:var(--muted);box-shadow:0 0 0 1px var(--line);background:#fff}
+.sim-btn i{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(46,155,111,.5);animation:ping 2s infinite}
+.sim-btn.off i{background:#b9c6c3;animation:none}
+.bell{position:relative;color:var(--deep)}
+.bell .dot{position:absolute;top:2px;right:1px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--crit);color:#fff;font-size:10px;font-family:var(--mono);display:grid;place-items:center}
+.bell .dot:empty{display:none}
+.drop{position:absolute;top:44px;right:0;width:min(350px,86vw);background:#fff;border-radius:14px;box-shadow:0 20px 50px rgba(8,22,26,.18),0 0 0 1px var(--line);padding:8px;display:none;z-index:60}
+.drop.open{display:grid;gap:2px}
+.drop .hd{font-size:11.5px;color:var(--muted);padding:6px 10px}
+.drop button{display:grid;gap:2px;text-align:left;padding:9px 10px;border-radius:10px;font-size:13px}
+.drop button:hover{background:var(--foam)}
+.drop button span{color:var(--muted);font-size:11.5px}
+.small-btn svg{flex:0 0 auto}
+.small-btn.glassy{background:rgba(255,255,255,.12);color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.24)}
+.small-btn.glassy:hover{background:rgba(255,255,255,.2)}
+.small-btn.danger{color:var(--crit)}
+
+/* overview hero */
+.ov-hero{position:relative;overflow:hidden;border-radius:22px;background:#0f3a42;color:#eaf6f2;padding:24px 26px;display:grid;grid-template-columns:1.35fr 1fr;gap:28px;min-height:250px}
+#ovCanvas{position:absolute;inset:0;width:100%;height:100%}
+.ov-hero > :not(canvas){position:relative;z-index:1}
+.ov-hero h2{font-size:clamp(26px,2.6vw,38px);font-weight:400;letter-spacing:-.045em;line-height:1.04}
+.ov-list{list-style:none;display:grid;gap:8px;font-size:13.5px;max-width:62ch}
+.ov-list li{display:flex;gap:9px}
+.ov-list li::before{content:"";flex:0 0 6px;height:6px;margin-top:7px;border-radius:50%;background:#9fe0c8}
+.ov-list li.c::before{background:#ff8f86}
+.ov-actions{display:grid;gap:8px;align-content:start}
+.ov-action{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center;padding:11px 13px;border-radius:14px;background:rgba(255,255,255,.1);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);font-size:13px}
+.ov-action b{font-family:var(--mono);font-size:11px;font-weight:500;color:#9fe0c8}
+.ov-action span{grid-column:2;font-size:11.5px;color:#a9cfc6}
+.ov-k{font-size:12px;color:#a9cfc6;font-family:var(--mono)}
+.stat{position:relative}
+.stat .ico{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--foam);color:var(--current)}
+.stat .top{display:flex;justify-content:space-between;align-items:center}
+.money{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.money div{display:grid;gap:4px;padding:12px 14px;border-radius:14px;background:var(--foam)}
+.bars rect.grow{transform-box:fill-box;transform-origin:50% 100%;animation:grow .9s cubic-bezier(.2,.8,.2,1) both}
+@keyframes grow{from{transform:scaleY(0)}}
+.section-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.section-title h2{font-size:20px;font-weight:500;letter-spacing:-.03em}
+
+/* basin tank */
+.tank{position:relative;height:96px;border-radius:14px;overflow:hidden;background:#eef5f2;box-shadow:inset 0 0 0 1px var(--line);container-type:inline-size}
+.tank .water{position:absolute;left:0;right:0;bottom:0;height:var(--lvl,60%);background:linear-gradient(#6ab9ad,#1d6f6a);transition:height 1.2s ease,background .6s;z-index:1}
+.tank .wv{position:absolute;left:0;top:-9px;width:200%;max-width:none;height:10px;color:#6ab9ad;animation:wv 7s linear infinite}
+.tank .wv.back{top:-12px;opacity:.45;animation-duration:11s;animation-direction:reverse}
+@keyframes wv{to{transform:translateX(-50%)}}
+.tank.warning .wv{color:#ecc16f}.tank.critical .wv{color:#f0918a}
+.tank.warning .water{background:linear-gradient(#ecc16f,#c5862a)}
+.tank.critical .water{background:linear-gradient(#f0918a,#c43c35)}
+.tank-fish{position:absolute;z-index:2;left:0;width:20px;color:rgba(255,255,255,.8);animation:swim 15s linear infinite}
+.tank-fish svg{width:100%}
+@keyframes swim{from{transform:translateX(-30px)}to{transform:translateX(calc(100cqw + 30px))}}
+.tank-lbl{position:absolute;z-index:3;top:8px;right:10px;font-size:11px;color:#1d4a4f;background:rgba(255,255,255,.75);padding:2px 7px;border-radius:999px}
+.basin-foot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+
+/* gauges */
+.gauge{display:grid;justify-items:center;gap:2px}
+.gauge svg{width:100%;max-width:210px}
+.gauge .gv{font-family:var(--display);font-size:30px;font-weight:500;letter-spacing:-.04em;font-variant-numeric:tabular-nums;margin-top:-34px}
+.gauge .gv small{font-family:var(--body);font-size:12px;color:var(--muted);margin-left:3px;letter-spacing:0}
+.gauge .gs{font-size:11.5px;color:var(--muted);text-align:center}
+.chart-wrap{position:relative}
+.chart-wrap svg{cursor:crosshair}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:#fff;font-size:11.5px;font-family:var(--mono);padding:5px 8px;border-radius:8px;transform:translate(-50%,-130%);white-space:nowrap;display:none;z-index:5}
+
+/* sheet */
+.sheet-bg{position:fixed;inset:0;z-index:300;background:rgba(8,22,26,.42);display:none}
+.sheet-bg.open{display:block}
+.sheet{position:absolute;top:0;right:0;bottom:0;width:min(440px,100%);background:#fff;padding:24px;display:grid;gap:16px;align-content:start;overflow-y:auto;animation:sheetIn .4s cubic-bezier(.2,.8,.2,1)}
+@keyframes sheetIn{from{transform:translateX(40px);opacity:0}}
+.sheet h3{font-size:22px;font-weight:400;letter-spacing:-.04em}
+.perm-row{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:13px 0;border-bottom:1px solid var(--line)}
+.perm-row div{display:grid;gap:2px}
+.perm-row span{font-size:12px;color:var(--muted)}
+.perm-chips{display:flex;flex-wrap:wrap;gap:4px}
+.perm-chips span{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--foam);color:#2f5458}
+.perm-chips span.off{background:none;color:#9aabaa;text-decoration:line-through}
+
+/* worker */
+.shift-banner{position:relative;overflow:hidden;display:grid;grid-template-columns:1fr auto;gap:18px;align-items:end;padding:22px 24px;border-radius:22px;background:#0f3a42;color:#eaf6f2;min-height:170px}
+.shift-banner > :not(canvas){position:relative;z-index:1}
+.shift-banner h2{font-size:clamp(24px,2.4vw,34px);font-weight:400;letter-spacing:-.045em;line-height:1.05}
+.shift-bar{height:6px;border-radius:999px;background:rgba(255,255,255,.18);overflow:hidden;margin-top:12px;max-width:420px}
+.shift-bar i{display:block;height:100%;background:#9fe0c8;border-radius:999px}
+.task{display:flex;gap:10px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.task:last-child{border-bottom:0}
+.task input{margin-top:2px;accent-color:var(--current);width:17px;height:17px;flex:0 0 auto}
+.task.done .t{text-decoration:line-through;color:var(--muted)}
+.task .mini{display:block}
+.task select{margin-left:auto;font:inherit;font-size:12px;border:1px solid #d5e1dd;border-radius:8px;padding:4px 6px;background:#fff}
+.report .unread{width:8px;height:8px;border-radius:50%;background:var(--current);display:inline-block;margin-right:6px}
+.person{display:flex;align-items:center;gap:10px}
+.person div{display:grid;line-height:1.3}
+.person span{font-size:11.5px;color:var(--muted)}
+.none{display:grid;justify-items:center;gap:10px;padding:60px 20px;text-align:center;color:var(--muted)}
+.none strong{font-family:var(--display);font-size:24px;font-weight:400;color:var(--ink);letter-spacing:-.03em}
+
+@media (max-width:900px){
+  .auth{grid-template-columns:1fr}
+  .auth-art{display:none}
+  .ov-hero{grid-template-columns:1fr}
+  .money{grid-template-columns:1fr}
+}
+@media (max-width:820px){
+  .side .farm,.side .user-card .who{display:none}
+  .user-card{padding:0;background:none}
+  .sim-btn span{display:none}
+  .ask-label{display:none}
+  .shift-banner{grid-template-columns:1fr}
+  .two{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  .tank .wv,.tank-fish,.sim-btn i,.bars rect.grow{animation:none}
+}
+
+
+/* ============ HOME SCREENS (owner / worker / technician) ============ */
+.home-hero{position:relative;margin:-24px -28px 0;height:clamp(460px,62vh,600px);overflow:hidden;background:linear-gradient(#ffffff 0,#f4faf8 40%,#e9f4f0 100%);border-bottom:1px solid var(--line)}
+.home-media{position:absolute;left:0;right:0;bottom:0;height:60%;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 30%);mask-image:linear-gradient(to bottom,transparent 0,#000 30%)}
+.home-media canvas{width:100%;height:100%}
+.home-glass{position:absolute;inset:0;z-index:2;pointer-events:none}
+.home-copy{position:absolute;z-index:4;top:9%;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:14px;padding:0 20px;text-align:center}
+.home-copy .eyebrow{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.home-copy h2{font-size:clamp(34px,4.4vw,64px);font-weight:400;letter-spacing:-.05em;line-height:.98;font-variation-settings:"opsz" 96}
+.home-copy h2 em{font-style:normal;font-weight:600;color:var(--current)}
+.home-copy h2 em .w,.home-copy h2 em:not(:has(.w)){text-decoration:underline wavy rgba(29,111,106,.45);text-decoration-thickness:.045em;text-underline-offset:.16em;text-decoration-skip-ink:none}
+.home-copy p{max-width:60ch;font-size:14.5px;color:var(--muted)}
+.home-copy .btn svg{flex:0 0 auto}
+.home-chips{position:absolute;inset:0;z-index:5;pointer-events:none}
+.home-chip{pointer-events:auto;text-align:left;cursor:pointer;transition:transform .3s,background .3s}
+.home-chip:hover{transform:translateY(-3px);background:rgba(255,255,255,.28)}
+.home-chip[tabindex="-1"]{cursor:default}
+.home-chip.st-warning .lbl i{background:#ffd27a;animation:none;box-shadow:0 0 0 3px rgba(255,210,122,.3)}
+.home-chip.st-critical .lbl i{background:#ff8f86;box-shadow:0 0 0 3px rgba(255,143,134,.3);animation:none}
+.shift-bar.light{background:rgba(15,58,66,.12);width:min(320px,80%);margin-top:4px}
+.shift-bar.light i{background:var(--current)}
+.tickets{position:relative;z-index:6;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:-62px;padding:0 6px}
+.tickets .card{height:148px;box-shadow:0 18px 40px rgba(15,58,66,.12)}
+.tickets .card b{font-size:clamp(34px,3.2vw,46px)}
+.tickets .card .note{font-size:11.5px;color:#2c4a4e}
+.tickets .alert-card{background:#f6d9d4}
+.tickets .alert-card b{color:#8e2a24}
+.centered-h{display:grid;justify-items:center;gap:12px;padding:30px 0 6px;text-align:center}
+.act3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-radius:22px;background:var(--paper);box-shadow:0 0 0 1px var(--line);overflow:hidden}
+.act{position:relative;display:flex;align-items:flex-end;gap:18px;min-height:210px;padding:24px 22px 26px;border-right:1px solid var(--line);cursor:pointer;overflow:hidden;transition:background .3s}
+.act:last-child{border-right:0}
+.act:hover{background:var(--foam)}
+.act .big{font-family:var(--display);font-size:clamp(110px,10vw,150px);font-weight:600;line-height:.74;letter-spacing:-.07em;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.act:hover .big{transform:translateY(-6px)}
+.act:nth-child(1) .big{color:var(--deep)} .act:nth-child(2) .big{color:var(--current)} .act:nth-child(3) .big{color:var(--reed)}
+.act time{font-size:11px;color:var(--current)}
+.act h4{font-family:var(--display);font-size:19px;font-weight:400;letter-spacing:-.03em;line-height:1.15;margin:6px 0 6px}
+.act p{font-size:12.5px;color:var(--muted);line-height:1.45}
+@media (max-width:1100px){ .home-chip:nth-child(4){display:none} }
+@media (max-width:900px){
+  .tickets{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .act3{grid-template-columns:1fr}
+  .act{border-right:0;border-bottom:1px solid var(--line);min-height:150px}
+}
+@media (max-width:820px){ .home-hero{margin:-16px -16px 0} }
+@media (max-width:760px){
+  .home-hero{height:auto;padding:36px 0 0;display:flex;flex-direction:column}
+  .home-copy{order:1}.home-media{order:2}.home-chips{order:3}
+  .home-copy{position:relative;top:auto}
+  .home-media{position:relative;height:220px;margin-top:20px}
+  .home-glass{display:none}
+  .home-chips{position:relative;inset:auto;display:flex;gap:8px;overflow-x:auto;padding:0 16px 16px;margin-top:-100px;pointer-events:auto}
+  .home-chip{position:relative!important;left:auto!important;top:auto!important;flex:0 0 auto;display:grid!important}
+  .tickets{margin-top:16px;padding:0}
+}
+
+
+/* ============ v4: light floating sidebar, simpler home, check-offs ============ */
+.app{background:#eef5f2;grid-template-columns:272px 1fr}
+.side{margin:12px 0 12px 12px;height:calc(100vh - 24px);border-radius:22px;background:#fff;color:var(--ink);box-shadow:0 0 0 1px rgba(15,58,66,.06),0 12px 32px rgba(15,58,66,.07);padding:18px 14px;gap:16px}
+.side .brand{color:var(--deep);padding:2px 6px}
+.side .farm{position:relative;overflow:hidden;background:linear-gradient(140deg,#0f3a42,#1d6f6a);border-radius:16px;padding:14px 14px 16px;gap:6px;color:#fff}
+.side .farm::after{content:"";position:absolute;left:-10%;right:-10%;bottom:-30px;height:70px;background:radial-gradient(60% 100% at 50% 100%,rgba(159,224,200,.28),transparent);pointer-events:none}
+.side .farm small{color:#a9cfc6}
+.side .farm strong{font-size:18px}
+.role-chip{background:rgba(255,255,255,.14);color:#c8f1e2}
+.farm-dots{display:flex;align-items:center;gap:5px;margin-top:2px;font-size:11px;color:#bfe2d8}
+.farm-dots i{width:9px;height:9px;border-radius:50%;box-shadow:0 0 0 2px rgba(255,255,255,.12)}
+.farm-dots span{margin-left:6px}
+.nav-label{font-family:var(--mono);font-size:10.5px;color:#8a9b9e;letter-spacing:.08em;text-transform:uppercase;padding:2px 12px 0}
+.side nav button{color:#3d5257;border-radius:12px;padding:10px 12px;font-size:14px}
+.side nav button:hover{background:var(--foam);color:var(--ink)}
+.side nav button[aria-current="page"]{background:var(--deep);color:#fff;box-shadow:0 6px 16px rgba(15,58,66,.22)}
+.side nav button svg{opacity:1}
+.side .user-card{background:var(--foam)}
+.side .user-card .who{color:var(--ink)}
+.side .user-card .who span{color:var(--muted)}
+.side .user-card .icon-btn{color:var(--deep)}
+.topbar{background:rgba(238,245,242,.85);border-bottom:0}
+
+.home-hero{height:auto;padding:52px 20px 136px}
+.home-copy{position:relative;top:auto;z-index:3}
+.home-media{height:170px;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 45%);mask-image:linear-gradient(to bottom,transparent 0,#000 45%)}
+.tickets{margin-top:-84px}
+
+.todo{list-style:none;display:grid;gap:2px}
+.todo li{display:flex;gap:14px;align-items:flex-start;padding:12px;border-radius:14px;cursor:pointer;transition:background .2s}
+.todo li:hover{background:var(--foam)}
+.todo .n{font-family:var(--display);font-size:36px;font-weight:600;line-height:.8;letter-spacing:-.05em;min-width:24px}
+.todo li:nth-child(1) .n{color:var(--deep)} .todo li:nth-child(2) .n{color:var(--current)} .todo li:nth-child(3) .n{color:var(--reed)}
+.todo div{display:grid;gap:3px}
+.todo b{font-weight:500;font-size:14px}
+.todo span{font-size:12px;color:var(--muted)}
+.blist{display:grid;gap:2px}
+.brow{display:grid;grid-template-columns:10px 1fr auto auto;gap:12px;align-items:center;padding:11px 10px;border-radius:12px;text-align:left;width:100%}
+.brow:hover{background:var(--foam)}
+.brow .bn{display:grid;line-height:1.3}
+.brow .bn span{font-size:12px;color:var(--muted)}
+.brow .bv b{font-size:16px}
+.brow .bv small{font-size:11px;color:var(--muted)}
+.sdot{width:10px;height:10px;border-radius:50%}
+
+.alert{grid-template-columns:4px auto 1fr auto;gap:14px;transition:background .4s}
+.check{width:30px;height:30px;border-radius:50%;border:2px solid #c3d4cf;display:grid;place-items:center;color:transparent;transition:background .25s,border-color .25s,color .25s;background:#fff}
+.check svg{width:16px;height:16px}
+.check:hover{border-color:var(--ok);color:rgba(46,155,111,.5)}
+.check.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.alert.just-done{background:#eef9f3}
+.alert.just-done .check{animation:pop .5s cubic-bezier(.2,.8,.2,1.4)}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+.alert.done{opacity:1}
+.alert.done h4{color:var(--muted);text-decoration:line-through}
+.a-status{font-size:12px;color:#a5650d;margin-top:3px}
+.a-status.ok{color:#1f7a55}
+.big-check{width:56px;height:56px;border-radius:50%;background:#e3f4ec;color:var(--ok);display:grid;place-items:center}
+.big-check svg{width:28px;height:28px}
+
+.report{grid-template-columns:1fr auto;align-items:center;gap:12px;padding:0 14px 0 0}
+.report-open{display:grid;gap:4px;padding:14px 16px;text-align:left;min-width:0}
+.read-btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;font-size:12.5px;font-weight:500;color:var(--deep);box-shadow:0 0 0 1px rgba(15,58,66,.16);white-space:nowrap;background:#fff}
+.read-btn svg{width:14px;height:14px}
+.read-btn:hover{background:var(--foam)}
+.read-btn.on{background:#e3f4ec;color:#1f7a55;box-shadow:none}
+.report.is-read .report-open b{font-weight:500;color:#3d5257}
+.modal .acts-row{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.small-btn.ok{background:var(--ok);color:#fff;box-shadow:none}
+.small-btn.ok:hover{background:#268a61}
+.small-btn svg{width:14px;height:14px}
+
+@media (max-width:820px){
+  .side{margin:0;height:auto;border-radius:0;box-shadow:0 1px 0 var(--line);padding:10px 12px}
+  .nav-label{display:none}
+}
+@media (max-width:760px){
+  .home-hero{display:block;padding:36px 16px 112px}
+  .home-media{position:absolute;height:130px;margin:0}
+  .alert{grid-template-columns:4px auto 1fr}
+  .alert .acts{grid-column:3}
+  .report{grid-template-columns:1fr;padding:0 0 12px}
+  .read-btn{justify-self:start;margin-left:16px}
+}
+
+/* responsive */
+@media (max-width:900px){
+  .nav{gap:18px}.nav-links{display:none}
+  .cards{grid-template-columns:repeat(2,1fr)}.card{height:124px}
+  .stats{height:auto;min-height:100vh;padding:100px 0 120px}
+  .assist-grid{grid-template-columns:1fr}
+  .g4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .g3{grid-template-columns:1fr}
+}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .side{flex-direction:row;align-items:center;gap:10px;padding:10px 12px;overflow-x:auto}
+  .side .farm small,.side-foot span{display:none}
+  .farm{padding:0;background:none;grid-template-columns:auto auto;align-items:center}
+  .farm strong{display:none}
+  .side nav{display:flex}
+  .side nav button{white-space:nowrap;padding:7px 10px}
+  .side-foot{margin:0}
+  .main{height:auto;min-height:0}
+  .topbar{padding:12px 16px}
+  .content{padding:16px 16px 110px}
+  .g2{grid-template-columns:1fr}
+}
+@media (max-width:760px){
+  .hero{height:100svh;min-height:600px}
+  .hero-copy{top:15%}
+  .hero-media{height:56%;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 16%);mask-image:linear-gradient(to bottom,transparent 0,#000 16%)}
+  .reading.r2,.reading.r3{display:none}
+  .reading.r1{left:16px!important;top:auto!important;bottom:7%}
+  .nav{top:16px;gap:14px;padding-left:12px}.brand{font-size:19px}
+  .loop{height:auto;min-height:0;padding:12vh 0 40px}
+  .loop-head{position:relative;top:auto}
+  .track{position:relative;inset:auto;flex-direction:column;margin-top:40px}
+  .panel{flex:none;height:auto;overflow:visible;border-right:0;border-top:1px solid var(--line);cursor:auto}
+  .panel-in{position:relative;left:auto;bottom:auto;width:auto;padding:28px 16px;gap:18px}
+  .num{font-size:140px}
+  .step,.panel.is-active .step{opacity:1;transform:none;filter:none;width:auto}
+  .bubbles{display:none}
+  .cta{height:auto;min-height:0;padding:60px 0 0}
+  .cta-img{position:relative;height:92vh;min-height:640px}
+  .cta-card{top:110px;padding:34px 18px 42px}
+  footer{grid-template-columns:1fr;justify-items:center;text-align:center}
+  .f-social{justify-self:center}.f-links{gap:18px;flex-wrap:wrap;justify-content:center}
+  .g4{grid-template-columns:1fr 1fr}
+  .alert{grid-template-columns:4px 1fr}
+  .alert .acts{grid-column:2;justify-content:flex-start}
+}
+@media (prefers-reduced-motion:reduce){
+  .drift-a,.drift-b,.bubbles i,.reading .lbl i,.live i{animation:none}
+  .panel,.step,.panel-ai{transition:none}
+}
+</style>
+</head>
+<body class="intro">
+<div class="backdrop" aria-hidden="true"></div>
+
+<div id="site">
+  <!-- HERO -->
+  <section class="hero" id="hero">
+    <nav class="nav" aria-label="Main">
+      <a class="brand" href="#hero" aria-label="FishFarm home">
+        <svg viewBox="0 0 30 20" aria-hidden="true"><path d="M2 10c5-7.4 14-7.4 19 0-5 7.4-14 7.4-19 0z" fill="currentColor"/><path d="M20.5 10 28 4.2v11.6z" fill="currentColor"/><circle cx="7.6" cy="9" r="1.5" fill="#fff"/></svg>
+        fishfarm
+      </a>
+      <div class="nav-links"><a href="#loop">How it works</a><a href="#assistant">Assistant</a><a href="#owner-auth">Sign in</a></div>
+      <a class="btn" href="#demo" data-demo>Try the live demo</a>
+    </nav>
+    <div class="mist mist-l drift-a" data-par="-60" aria-hidden="true"></div>
+    <div class="mist mist-r drift-b" data-par="-90" aria-hidden="true"></div>
+    <div class="hero-copy" id="heroCopy">
+      <h1 id="heroTitle" class="split">Know your water<br>before your <em>fish do.</em></h1>
+      <p class="hero-sub reveal-hero">FishFarm reads temperature, pH and dissolved oxygen in every basin every six seconds, warns the right person, and explains what to do.</p>
+      <div class="hero-ctas reveal-hero"><a class="btn" href="#owner-auth" data-register>Create your farm</a><a class="btn ghost" href="#demo" data-demo>Try the live demo</a></div>
+    </div>
+    <div class="hero-media"><canvas id="heroCanvas" aria-label="Fish swimming in a basin with aerator bubbles" role="img"></canvas></div>
+    <div class="hero-glass" id="heroGlass" aria-hidden="true"></div>
+    <div class="reading r1" style="left:7%;top:70%"><span class="lbl"><i></i>Basin 3 · dissolved oxygen</span><b data-hero="do">7.42</b><span class="u">mg/L</span></div>
+    <div class="reading r2" style="left:44%;top:84%"><span class="lbl"><i></i>Basin 1 · water</span><b data-hero="temp">28.1</b><span class="u">°C</span></div>
+    <div class="reading r3" style="right:7%;top:66%"><span class="lbl"><i></i>Basin 2 · acidity</span><b data-hero="ph">7.31</b><span class="u">pH</span></div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats" id="stats">
+    <canvas id="statsWater" aria-hidden="true"></canvas>
+    <div class="sq-field" data-count="20"></div>
+    <div class="stats-inner">
+      <span class="pill reveal"><i></i>Demo farm, last 30 days</span>
+      <h2 class="h2 split">Every basin checked<br>14,400 times a day.</h2>
+      <div class="cards">
+        <div class="card"><small>Night oxygen dips flagged before dawn</small><b data-to="94" data-dec="0" data-suf="%">0%</b></div>
+        <div class="card"><small>Median time from alert to action</small><b data-to="4.2" data-dec="1" data-suf=" min">0 min</b></div>
+        <div class="card"><small>Feed saved by skipping risky evening meals</small><b data-to="12" data-dec="0" data-suf="%">0%</b></div>
+        <div class="card"><small>Sensor uptime across 12 probes</small><b data-to="99.6" data-dec="1" data-suf="%">0%</b></div>
+      </div>
+      <div class="cards-shadow"></div>
+      <div class="built"><span class="l">Built with</span><span>PostgreSQL</span><span>FastAPI</span><span>pandas</span><span>scikit-learn</span><span>React</span><span>Docker</span></div>
+      <p class="foot-note">Figures come from the simulated demo farm.</p>
+    </div>
+  </section>
+
+  <!-- LOOP -->
+  <section class="loop" id="loop">
+    <div class="loop-head">
+      <span class="pill reveal">From sensor to action</span>
+      <h2 class="h2 split">One reading, three hands,<br>six seconds.</h2>
+    </div>
+    <div class="track" id="track">
+      <div class="panel is-active" tabindex="0" aria-label="Step 1: The sensor reads">
+        <div class="panel-in"><span class="num">1</span>
+          <div class="step"><div class="bubbles" aria-hidden="true"><i style="left:10px;top:60px;width:22px;height:22px"></i><i style="left:44px;top:24px;width:14px;height:14px;animation-delay:-2s"></i><i style="left:30px;top:0;width:9px;height:9px;animation-delay:-4s"></i></div>
+            <span class="tag">every 6 s · 3 probes per basin</span><h3>The sensor reads</h3><p>Probes in each basin measure temperature, pH and dissolved oxygen and send every reading to the data pipeline.</p></div></div>
+      </div>
+      <div class="panel" tabindex="0" aria-label="Step 2: The pipeline checks">
+        <div class="panel-in"><span class="num">2</span>
+          <div class="step"><div class="bubbles" aria-hidden="true"><i style="left:16px;top:50px;width:18px;height:18px"></i><i style="left:50px;top:20px;width:11px;height:11px;animation-delay:-3s"></i></div>
+            <span class="tag">clean · compare · store</span><h3>The pipeline checks</h3><p>Each reading is cleaned, compared with the safe range for the species in that basin, and stored for the charts and the oxygen prediction model.</p></div></div>
+      </div>
+      <div class="panel" tabindex="0" aria-label="Step 3: The right person acts">
+        <div class="panel-in"><span class="num">3</span>
+          <div class="step"><div class="bubbles" aria-hidden="true"><i style="left:6px;top:56px;width:20px;height:20px"></i><i style="left:40px;top:28px;width:13px;height:13px;animation-delay:-1.5s"></i><i style="left:62px;top:4px;width:8px;height:8px;animation-delay:-3.5s"></i></div>
+            <span class="tag">worker · technician · owner</span><h3>The right person acts</h3><p>Water problems go to the worker on shift. A sensor that stops changing goes to the technician. The owner sees the summary and the money.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ASSISTANT -->
+  <section class="assist" id="assistant">
+    <div class="assist-grid">
+      <div class="assist-copy">
+        <span class="pill reveal">Farm assistant</span>
+        <h2 class="h2 split">Ask your farm<br>why.</h2>
+        <p class="reveal">The assistant reads the same live data as your dashboard, checks the safe range for each species, and answers with numbers, sources and next steps. Alerts still come from the alert engine, never from the chat.</p>
+        <ul class="ticks reveal">
+          <li>Explains any alert, chart or cost in plain words</li>
+          <li>Runs what-if scenarios on feeding and stocking</li>
+          <li>Asks for your approval before it creates a task</li>
+        </ul>
+        <a class="btn reveal" href="#demo" data-demo data-ask="Why did oxygen drop in Basin 3 last night?">Ask it in the demo</a>
+      </div>
+      <div class="chat-demo reveal" aria-label="Example conversation with the farm assistant">
+        <div class="chat-top"><b>Farm assistant</b><span class="mono">reads live data</span></div>
+        <div class="msg-user">Why did oxygen drop in Basin 3 last night?</div>
+        <div class="msg-ai">
+          <div class="steps"><span class="stepchip"><span class="ok">✓</span>Read Basin 3 oxygen, last 24 h</span><span class="stepchip"><span class="ok">✓</span>Checked rainbow trout limits</span></div>
+          <p>Oxygen fell to <b id="demoMin">5.4 mg/L at 04:15</b>, under the 7.0 mg/L warning level for rainbow trout. Algae stop making oxygen after sunset but keep using it until dawn, and the evening feed added demand.</p>
+          <div class="chart" id="showcaseChart"></div>
+          <div class="srcs"><span class="src">FAO · Water quality in aquaculture</span><span class="src">OMAFRA · Rainbow trout profile</span></div>
+          <div class="approve"><span class="mini">Suggested task: <b>Run the Basin 3 aerator 22:00–07:00 tonight</b></span><div class="row" style="justify-content:flex-start"><a class="small-btn primary" href="#demo" data-demo data-ask="Why did oxygen drop in Basin 3 last night?">Approve in the demo</a><a class="small-btn" href="#demo" data-demo>Open the demo</a></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta" id="cta">
+    <div class="sq-field" data-count="14"></div>
+    <div class="cta-img"><canvas id="nightCanvas" role="img" aria-label="Floating fish pens on a lake before dawn, sensor buoys blinking"></canvas></div>
+    <div class="cta-card" id="ctaCard">
+      <span class="pill">Night shift</span>
+      <h2 class="h2 split">Sleep through the<br>4 a.m. oxygen dip.</h2>
+      <p class="reveal">FishFarm watches every basin through the night and wakes the right person only when the water needs it.</p>
+      <div class="hero-ctas reveal"><a class="btn" href="#owner-auth" data-register>Create your farm</a><a class="btn ghost" href="#worker-auth">Team sign in</a></div>
+    </div>
+  </section>
+
+  <footer id="footer">
+    <svg class="f-logo" viewBox="0 0 80 80" style="overflow:visible" aria-label="FishFarm">
+      <circle id="fRing" cx="40" cy="40" r="37" fill="none" stroke="#0c1d22" stroke-width="2.4" stroke-dasharray="233" stroke-dashoffset="0" transform="rotate(-90 40 40)"/>
+      <circle class="fdot" cx="27" cy="38" r="3.2" fill="#0c1d22"/>
+      <circle class="fdot" cx="27" cy="38" r="3.2" fill="#0c1d22" opacity="0"/>
+      <circle class="fdot" cx="27" cy="38" r="3.2" fill="#0c1d22" opacity="0"/>
+      <path id="fMark" d="M18 40C26 29 42 29 51 40 42 51 26 51 18 40ZM51 40 61 32M51 40 61 48" fill="none" stroke="#0c1d22" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="120" stroke-dashoffset="0"/>
+    </svg>
+    <nav class="f-links" aria-label="Footer"><a href="#loop">How it works</a><a href="#assistant">Assistant</a><a href="#owner-auth">Owner sign in</a><a href="#worker-auth">Team sign in</a><a href="#demo" data-demo>Live demo</a></nav>
+    <div class="f-social"><span>pH · °C · O₂</span></div>
+    <p class="f-copy">© 2026 FishFarm · Portfolio project · All figures come from a simulated farm.</p>
+  </footer>
+</div>
+
+<!-- ============ SIGN IN ============ -->
+<div class="auth" id="auth" data-lenis-prevent>
+  <div class="auth-art">
+    <canvas id="authCanvas" aria-hidden="true"></canvas>
+    <a class="brand" href="#hero" data-home aria-label="Back to the FishFarm website">
+      <svg viewBox="0 0 30 20" aria-hidden="true"><path d="M2 10c5-7.4 14-7.4 19 0-5 7.4-14 7.4-19 0z" fill="currentColor"/><path d="M20.5 10 28 4.2v11.6z" fill="currentColor"/><circle cx="7.6" cy="9" r="1.5" fill="#0c3038"/></svg>fishfarm</a>
+    <div>
+      <p class="auth-quote" id="authQuote">The oxygen dip came at 4 a.m. The night worker knew <em>before the fish did.</em></p>
+      <div class="reading"><span class="lbl"><i></i>Basin 3 · dissolved oxygen · live</span><b data-hero="do2">7.42</b><span class="u">mg/L</span></div>
+    </div>
+    <div class="auth-meta"><span>4 basins</span><span>12 probes</span><span>a reading every 6 s</span><span>3 roles</span></div>
+  </div>
+  <div class="auth-side"><div class="auth-card" id="authCard"></div></div>
+</div>
+
+<!-- ============ APP ============ -->
+<div class="app" id="app" data-lenis-prevent aria-label="FishFarm app">
+  <aside class="side">
+    <a class="brand" href="#hero" data-home aria-label="Back to the FishFarm website">
+      <svg viewBox="0 0 30 20" aria-hidden="true"><path d="M2 10c5-7.4 14-7.4 19 0-5 7.4-14 7.4-19 0z" fill="currentColor"/><path d="M20.5 10 28 4.2v11.6z" fill="currentColor"/><circle cx="7.6" cy="9" r="1.5" fill="#0c1d22"/></svg>fishfarm</a>
+    <div class="farm"><small>Farm</small><strong id="farmName">Lac Vert</strong><span class="role-chip" id="roleChip">Owner</span><div class="farm-dots" id="farmDots"></div></div>
+    <span class="nav-label">Menu</span>
+    <nav id="sideNav" aria-label="App"></nav>
+    <div class="side-foot"><div class="user-card"><span class="avatar" id="meAv">NA</span><span class="who"><b id="meName">Nadia Amrani</b><span id="meEmail"></span></span>
+      <button class="icon-btn" type="button" data-action="logout" aria-label="Sign out" title="Sign out"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg></button></div></div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <div><div class="crumbs" id="crumbs">Lac Vert</div><h1 id="viewTitle">Overview</h1></div>
+      <div class="top-acts">
+        <button class="sim-btn" type="button" data-action="sim" id="simBtn" title="Pause or resume the sensor simulator"><i></i><span id="clock">--:--:--</span></button>
+        <button class="icon-btn bell" type="button" data-action="bell" id="bellBtn" aria-label="Notifications" aria-expanded="false"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0"/></svg><span class="dot" id="bellDot"></span></button>
+        <div class="drop" id="drop"></div>
+        <button class="small-btn primary" type="button" data-action="open-ai"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12c3-4.5 9-4.5 12 0-3 4.5-9 4.5-12 0z"/><path d="M16 12l4-3v6z"/></svg><span class="ask-label">Ask the farm</span></button>
+      </div>
+    </header>
+    <main class="content" id="content"></main>
+  </div>
+</div>
+
+<aside class="panel-ai" id="aiPanel" aria-label="Farm assistant" aria-hidden="true" data-lenis-prevent>
+  <div class="ai-head"><b>Farm assistant</b><div class="acts"><button class="small-btn" type="button" id="aiNew">New chat</button><button class="small-btn" type="button" id="aiClose" aria-label="Close assistant">✕</button></div></div>
+  <div class="demo-banner">Demo mode: answers are built from the farm's live demo data with prepared templates. Add an API key in the real app for free-form answers.</div>
+  <div class="ai-body" id="aiBody"></div>
+  <form class="ai-input" id="aiForm"><label for="aiText" class="mini" style="position:absolute;left:-9999px">Ask a question</label><input id="aiText" autocomplete="off" maxlength="2000" placeholder="Ask about a basin, an alert or your costs"><button class="small-btn primary" type="submit">Send</button></form>
+</aside>
+<div class="modal-bg" id="modalBg"><div class="modal" role="dialog" aria-modal="true" id="modal"></div></div>
+<div class="sheet-bg" id="sheetBg"><div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Details"></div></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+<script>
+(function(){
+"use strict";
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const hasGsap = typeof window.gsap !== 'undefined' && typeof window.ScrollTrigger !== 'undefined';
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+const rand = (a,b) => a + Math.random()*(b-a);
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ================= FARM SIMULATION (shared by site + demo) ================= */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const prng = mulberry32(20261118);
+const gauss = () => { let u=0,v=0; while(!u)u=prng(); while(!v)v=prng(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); };
+
+const SPECIES = {
+  tilapia:{name:'Nile tilapia', temp:{min:22,max:34}, do:{warn:5,crit:3}, ph:{min:6.5,max:8.5}, src:'FAO · Nile tilapia fact sheet'},
+  trout:{name:'Rainbow trout', temp:{min:4,max:20}, do:{warn:7,crit:5}, ph:{min:6.5,max:8.5}, src:'OMAFRA 2024 · Rainbow trout profile'},
+  carp:{name:'Common carp', temp:{min:15,max:32}, do:{warn:5,crit:3}, ph:{min:6.5,max:9}, src:'FAO · Common carp fact sheet'}
+};
+const METRIC = {do:{label:'Dissolved oxygen', short:'Oxygen', unit:'mg/L', dec:2}, temp:{label:'Water temperature', short:'Temp', unit:'°C', dec:1}, ph:{label:'pH', short:'pH', unit:'', dec:2}};
+const S = {
+  role:'owner', view:'overview', basinId:null, metric:'do',
+  basins:[
+    {id:'b1', name:'Basin 1', species:'tilapia', capacity:180, fish:4200, revenue:21400, feed:9100, maint:1300, ops:2600, risk:.11, base:{temp:28.2,do:6.9,ph:7.35}, amp:{temp:.8,do:1.5,ph:.3}},
+    {id:'b2', name:'Basin 2', species:'tilapia', capacity:160, fish:3800, revenue:18200, feed:8700, maint:1100, ops:2400, risk:.24, base:{temp:28.6,do:6.7,ph:8.33}, amp:{temp:.9,do:1.5,ph:.3}},
+    {id:'b3', name:'Basin 3', species:'trout',   capacity:140, fish:2600, revenue:24800, feed:9800, maint:1900, ops:3100, risk:.62, base:{temp:17.6,do:7.3,ph:7.2}, amp:{temp:.6,do:1.75,ph:.2}},
+    {id:'b4', name:'Basin 4', species:'carp',    capacity:200, fish:3100, revenue:12600, feed:5900, maint:900,  ops:2200, risk:.09, base:{temp:26.1,do:6.4,ph:7.6}, amp:{temp:1,do:1.7,ph:.3}}
+  ],
+  alerts:[], reports:[], tasks:[], team:[], sensors:[]
+};
+const STEP = 15*60*1000, N = 97;
+const now0 = Date.now();
+const t0 = now0 - (N-1)*STEP;
+S.times = Array.from({length:N}, (_,i) => t0 + i*STEP);
+const hourOf = ts => { const d = new Date(ts); return d.getHours() + d.getMinutes()/60; };
+const peak = {do:15.5, temp:16, ph:16};
+const sd = {do:.12, temp:.08, ph:.03};
+function diurnal(b, m, ts){
+  const h = hourOf(ts);
+  let v = b.base[m] + b.amp[m]*Math.cos(2*Math.PI*(h-peak[m])/24);
+  if (b.id==='b3' && m==='do' && h>2.8 && h<5.6) v -= .28*Math.sin(Math.PI*(h-2.8)/2.8);
+  return v;
+}
+S.basins.forEach(b => {
+  b.hist = {};
+  ['do','temp','ph'].forEach(m => { b.hist[m] = S.times.map(ts => +(diurnal(b,m,ts) + gauss()*sd[m]).toFixed(3)); });
+  b.live = {do:b.hist.do[N-1], temp:b.hist.temp[N-1], ph:b.hist.ph[N-1]};
+  b.thr = SPECIES[b.species];
+});
+// Basin 4 temperature probe is stuck at 26.0 for the last 3 h 15 min
+const b4 = S.basins[3]; for (let i=N-14;i<N;i++) b4.hist.temp[i]=26.0; b4.live.temp=26.0; b4.stuck=true;
+
+function minOf(arr){ let mi=0; arr.forEach((v,i)=>{ if(v<arr[mi]) mi=i; }); return {i:mi, v:arr[mi]}; }
+function maxOf(arr){ let mi=0; arr.forEach((v,i)=>{ if(v>arr[mi]) mi=i; }); return {i:mi, v:arr[mi]}; }
+const hhmm = ts => new Date(ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+const eur = n => '€' + Math.round(n).toLocaleString('en-US');
+const fmt = (v,d) => Number(v).toFixed(d);
+const B = id => S.basins.find(b => b.id===id);
+
+const b3min = minOf(S.basins[2].hist.do);
+const b2max = maxOf(S.basins[1].hist.ph);
+let alertSeq = 1;
+function addAlert(a){ a.id = 'a'+(alertSeq++); a.resolved=false; S.alerts.unshift(a); return a; }
+addAlert({basin:'b4', metric:'temp', value:26.0, severity:'low', kind:'sensor', time:S.times[N-14], title:'Temperature probe not changing', text:'Reads exactly 26.0 °C for over 3 h while other basins moved 1–2 °C.'});
+addAlert({basin:'b2', metric:'ph', value:b2max.v, severity:'medium', kind:'water', time:S.times[b2max.i], title:'pH above 8.5', text:'pH reached '+fmt(b2max.v,2)+', above the 8.5 limit for Nile tilapia.'});
+addAlert({basin:'b3', metric:'do', value:b3min.v, severity:'high', kind:'water', time:S.times[b3min.i], title:'Oxygen below 7.0 mg/L', text:'Dissolved oxygen fell to '+fmt(b3min.v,2)+' mg/L, under the 7.0 mg/L warning level for rainbow trout.'});
+
+S.team = [
+  {name:'Karim Benali', role:'Worker', shift:'06:00–14:00', perms:{reports:true,alerts:true,basins:true,sensors:false,maintenance:false}},
+  {name:'Léa Martin', role:'Worker', shift:'14:00–22:00', perms:{reports:true,alerts:true,basins:true,sensors:false,maintenance:false}},
+  {name:'Inès Haddad', role:'Worker', shift:'22:00–06:00', perms:{reports:true,alerts:true,basins:true,sensors:false,maintenance:false}},
+  {name:'Samir Touati', role:'Technician', shift:'08:00–17:00', perms:{reports:true,alerts:true,basins:false,sensors:true,maintenance:true}}
+];
+const ago = h => now0 - h*3600*1000;
+S.reports = [
+  {author:'Karim Benali', role:'Worker', time:ago(3.2), title:'Morning shift: Basin 3 fish slow at feeding', body:'Trout in Basin 3 came up slowly at the 07:00 feed and left about a fifth of the ration. Water looked clear. I ran the aerator for an extra hour and will watch the evening feed.'},
+  {author:'Samir Touati', role:'Technician', time:ago(20), title:'Replaced pH probe, Basin 1', body:'Old probe drifted +0.2 against the buffer solution. New probe installed and calibrated at pH 7 and pH 10. Next calibration due in 30 days.'},
+  {author:'Inès Haddad', role:'Worker', time:ago(26), title:'Night shift: all basins normal', body:'Checked all four basins at 01:00 and 04:00. Aerators running in Basins 2 and 3. No dead fish found.'},
+  {author:'Samir Touati', role:'Technician', time:ago(50), title:'Aerator bearing noise, Basin 3', body:'Aerator in Basin 3 makes a grinding noise at start-up. Bearing ordered, arrives Thursday. Aerator still works.'}
+];
+S.tasks = [
+  {title:'Recalibrate pH probe, Basin 2', who:'Samir Touati', due:'Tomorrow', status:'pending'},
+  {title:'Clean aerator diffusers, Basin 3', who:'Samir Touati', due:'Today', status:'in progress'}
+];
+let sn=1;
+S.basins.forEach(b => ['temp','ph','do'].forEach(m => {
+  let st='OK', note='Readings vary normally';
+  if (b.id==='b4' && m==='temp'){ st='Stuck'; note='Flat 26.0 °C for 3 h 15 min'; }
+  if (b.id==='b2' && m==='ph'){ st='Drift'; note='+0.15 vs. neighbour basins, calibration due'; }
+  S.sensors.push({id:'S-'+String(sn++).padStart(2,'0'), basin:b.id, metric:m, status:st, note, cal:['12 Oct','28 Oct','2 Nov','9 Nov'][sn%4]});
+}));
+
+// FAO freshwater oxygen solubility (mg/L): 10 °C 11.28, 20 °C 9.08, 30 °C 7.54 — interpolated
+function doSat(temp){ const pts=[[10,11.28],[20,9.08],[30,7.54]]; const t=clamp(temp,0,40);
+  let a=pts[0], b=pts[1]; if (t>20){a=pts[1];b=pts[2];}
+  return a[1] + (b[1]-a[1])*(t-a[0])/(b[0]-a[0]); }
+const satPct = b => 100*b.live.do/doSat(b.live.temp);
+
+function statusOf(b){
+  const t=b.thr; const d=b.live.do, p=b.live.ph, tp=b.live.temp;
+  if (d < t.do.crit || tp > t.temp.max+2) return 'critical';
+  if (d < t.do.warn || p > t.ph.max || p < t.ph.min || tp > t.temp.max || tp < t.temp.min) return 'warning';
+  if (S.alerts.some(a => !a.resolved && a.basin===b.id && a.severity!=='low')) return 'warning';
+  return 'healthy';
+}
+function cls(m, b){
+  const v=b.live[m], t=b.thr;
+  if (m==='do') return v<t.do.crit?'bad':v<t.do.warn?'meh':'';
+  if (m==='ph') return (v>t.ph.max||v<t.ph.min)?'meh':'';
+  return (v>t.temp.max||v<t.temp.min)?'meh':'';
+}
+const openAlerts = () => S.alerts.filter(a => !a.resolved);
+
+/* live ticks */
+function tick(){
+  if (!S.simOn){ updateLive(); return; }
+  const ts = Date.now();
+  S.basins.forEach(b => {
+    ['do','temp','ph'].forEach(m => {
+      if (b.stuck && m==='temp') return;
+      const target = diurnal(b,m,ts);
+      const v = b.live[m] + (target-b.live[m])*.08 + gauss()*sd[m]*.5;
+      b.live[m] = +v.toFixed(3);
+      b.hist[m][N-1] = b.live[m];
+    });
+  });
+  if (Math.random() < .045){
+    const b = S.basins[Math.floor(Math.random()*3)];
+    const m = Math.random()<.5 ? 'ph' : 'do';
+    const v = m==='ph' ? b.thr.ph.max + rand(.05,.3) : b.thr.do.warn - rand(.1,.6);
+    const a = addAlert({basin:b.id, metric:m, value:v, severity:'medium', kind:'water', time:ts, title:(m==='ph'?'pH spike above '+b.thr.ph.max:'Oxygen dip below '+b.thr.do.warn+' mg/L'), text:METRIC[m].label+' read '+fmt(v,2)+(m==='do'?' mg/L':'')+' for one reading. The alert engine flagged it; check whether it repeats.'});
+    toast('<b>New alert</b> · '+b.name+' · '+esc(a.title));
+    if (S.session && S.view==='alerts' && htmlCls.contains('in-app')) render();
+  }
+  updateLive();
+}
+
+/* ================= CANVAS SCENES ================= */
+const DPR = Math.min(window.devicePixelRatio||1, 1.5);
+function fitCanvas(c){ const r=c.getBoundingClientRect(); const w=Math.max(1,Math.round(r.width)), h=Math.max(1,Math.round(r.height));
+  if (c.width!==Math.round(w*DPR) || c.height!==Math.round(h*DPR)){ c.width=Math.round(w*DPR); c.height=Math.round(h*DPR); }
+  const ctx=c.getContext('2d'); ctx.setTransform(DPR,0,0,DPR,0,0); return {ctx,w,h}; }
+function drawFish(ctx,x,y,s,dir,ph,col){
+  ctx.save(); ctx.translate(x,y); ctx.scale(dir,1); ctx.fillStyle=col;
+  const wag=Math.sin(ph)*s*.22;
+  ctx.beginPath(); ctx.moveTo(s,0); ctx.quadraticCurveTo(s*.1,-s*.52,-s*.75,wag*.3); ctx.quadraticCurveTo(s*.1,s*.52,s,0); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-s*.65,wag*.3); ctx.lineTo(-s*1.3,-s*.42+wag); ctx.lineTo(-s*1.18,wag*.9); ctx.lineTo(-s*1.3,s*.42+wag); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(s*.15,-s*.36); ctx.lineTo(-s*.2,-s*.62); ctx.lineTo(-s*.3,-s*.3); ctx.fill();
+  ctx.restore();
+}
+function makeFish(n, w, h, top){ return Array.from({length:n}, () => { const z=Math.random(); return {x:Math.random()*w, y:top+(h-top)*(.15+.75*Math.random()), z, dir:Math.random()<.78?1:-1, sp:.25+z*.55, ph:Math.random()*6, off:Math.random()*6}; }); }
+
+const scenes = [];
+const PALETTES = {
+  light:{stops:[[0,'#cfe9e2'],[.35,'#6fb3a8'],[.75,'#1e6a6a'],[1,'#0c3038']], fish:'8,38,44', ray:.16, bubble:'235,255,250'},
+  dark:{stops:[[0,'#1b5a5e'],[.5,'#0f3a42'],[1,'#071f25']], fish:'160,220,205', ray:.07, bubble:'190,240,225'}
+};
+// One reusable underwater scene: light rays, plankton, fish and aerator bubbles
+function makeWater(c, o){
+  const pal = PALETTES[o.palette||'light'];
+  let fish=null, bubbles=[], plankton=[], lastW=0;
+  return function draw(t){
+    const {ctx,w,h} = fitCanvas(c);
+    if (!fish || Math.abs(w-lastW)>80){ fish = makeFish(Math.round((o.fish||28)*(w<700?.5:1)), w, h, h*(o.top??.18)); plankton = Array.from({length:Math.round(w/18)},()=>({x:Math.random()*w,y:Math.random()*h,r:rand(.6,1.8),s:rand(.05,.2)})); lastW=w; }
+    const g = ctx.createLinearGradient(0,0,0,h); pal.stops.forEach(s=>g.addColorStop(s[0],s[1])); ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+    for (let i=0;i<6;i++){ const x0=w*(.06+.18*i)+Math.sin(t*.00025+i*1.7)*40; const rg=ctx.createLinearGradient(0,0,0,h*.9); rg.addColorStop(0,'rgba(255,255,255,'+pal.ray+')'); rg.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.fillStyle=rg; ctx.beginPath(); ctx.moveTo(x0-18,0); ctx.lineTo(x0+46,0); ctx.lineTo(x0+180,h*.9); ctx.lineTo(x0+40,h*.9); ctx.closePath(); ctx.fill(); }
+    ctx.fillStyle='rgba(235,250,245,.3)';
+    plankton.forEach(p=>{ p.y-=p.s; p.x+=Math.sin((t*.0004)+p.y*.02)*.15; if(p.y<0){p.y=h;p.x=Math.random()*w;} ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.fill(); });
+    fish.sort((a,b)=>a.z-b.z).forEach(f=>{
+      f.x += f.dir*f.sp*(reduce?0:1.1); f.ph += .16; f.y += Math.sin(t*.0008+f.off)*.12;
+      const s = (7+f.z*17)*(o.scale||1); if (f.dir>0 && f.x>w+40) f.x=-40; if (f.dir<0 && f.x<-40) f.x=w+40;
+      drawFish(ctx,f.x,f.y,s,f.dir,f.ph,'rgba('+pal.fish+','+((o.palette==='dark'?.08:.22)+f.z*(o.palette==='dark'?.22:.5)).toFixed(2)+')');
+    });
+    const ae = o.aerators || [.16,.52,.86];
+    if (!reduce && Math.random()<.55){ const x=w*ae[Math.floor(Math.random()*ae.length)]+rand(-10,10); bubbles.push({x,y:h+4,r:rand(1.4,4.6),vy:rand(.5,1.4),ph:Math.random()*6}); }
+    ctx.lineWidth=1;
+    bubbles = bubbles.filter(b=>b.y>h*.08);
+    bubbles.forEach(b=>{ b.y-=b.vy; b.ph+=.08; const x=b.x+Math.sin(b.ph)*2.2; ctx.strokeStyle='rgba('+pal.bubble+',.7)'; ctx.beginPath(); ctx.arc(x,b.y,b.r,0,7); ctx.stroke(); ctx.fillStyle='rgba(255,255,255,.5)'; ctx.beginPath(); ctx.arc(x-b.r*.35,b.y-b.r*.35,b.r*.3,0,7); ctx.fill(); });
+  };
+}
+function addScene(el, draw, layer){ const s={el, draw, layer, visible: layer!=='site'}; scenes.push(s); return s; }
+// HERO
+addScene($('#heroCanvas'), makeWater($('#heroCanvas'),{palette:'light', fish:28}), 'site').visible=true;
+// AUTH (sign-in pages)
+addScene($('#authCanvas'), makeWater($('#authCanvas'),{palette:'dark', fish:22, top:.05, scale:1.2, aerators:[.2,.7]}), 'auth');
+// STATS water fill
+const statsState = {level:.62};
+(function(){
+  const c = $('#statsWater'); if(!c) return;
+  let bub=[], fish=null, lw=0;
+  function draw(t){
+    const {ctx,w,h} = fitCanvas(c); ctx.clearRect(0,0,w,h);
+    const surf = h*(1-(.06+.66*statsState.level));
+    if (!fish || Math.abs(w-lw)>80){ fish=makeFish(w<700?5:9,w,h,0); lw=w; }
+    const wave = (x,k) => surf + Math.sin(x*.011+t*.0012*k)*7 + Math.sin(x*.027-t*.0009)*3;
+    ctx.fillStyle='rgba(143,206,192,.35)'; ctx.beginPath(); ctx.moveTo(0,h); for(let x=0;x<=w;x+=12) ctx.lineTo(x,wave(x+60,.7)-8); ctx.lineTo(w,h); ctx.fill();
+    const g=ctx.createLinearGradient(0,surf,0,h); g.addColorStop(0,'rgba(170,220,208,.9)'); g.addColorStop(.45,'rgba(45,138,128,.9)'); g.addColorStop(1,'rgba(12,48,56,.95)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.moveTo(0,h); for(let x=0;x<=w;x+=10) ctx.lineTo(x,wave(x,1)); ctx.lineTo(w,h); ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.7)'; ctx.lineWidth=1.5; ctx.beginPath(); for(let x=0;x<=w;x+=10){ const y=wave(x,1); x?ctx.lineTo(x,y):ctx.moveTo(x,y);} ctx.stroke();
+    fish.forEach(f=>{ const fy = surf + 40 + (h-surf-60)*(.2+.7*((f.off%1+1)%1)); if (fy>h-10 || h-surf<90) return; f.x+=f.dir*f.sp; f.ph+=.15; if(f.dir>0&&f.x>w+40)f.x=-40; if(f.dir<0&&f.x<-40)f.x=w+40; drawFish(ctx,f.x,fy+Math.sin(t*.001+f.off)*4,8+f.z*12,f.dir,f.ph,'rgba(6,34,40,'+(.25+f.z*.35).toFixed(2)+')'); });
+    if (!reduce && Math.random()<.4) bub.push({x:Math.random()*w,y:h+4,r:rand(1.2,4),vy:rand(.4,1.1),ph:Math.random()*6});
+    bub = bub.filter(b=>b.y>surf+4); ctx.strokeStyle='rgba(235,255,250,.7)'; ctx.lineWidth=1;
+    bub.forEach(b=>{ b.y-=b.vy; b.ph+=.07; ctx.beginPath(); ctx.arc(b.x+Math.sin(b.ph)*2,b.y,b.r,0,7); ctx.stroke(); });
+  }
+  addScene(c, draw, 'site');
+})();
+// CTA night lake with fish pens + sensor buoys
+(function(){
+  const c = $('#nightCanvas'); if(!c) return;
+  let stars=null, lw=0;
+  function draw(t){
+    const {ctx,w,h} = fitCanvas(c);
+    const hz = h*.42;
+    if(!stars || Math.abs(w-lw)>80){ stars=Array.from({length:110},()=>({x:Math.random()*w,y:Math.random()*hz*.9,r:rand(.4,1.3),p:Math.random()*6})); lw=w; }
+    let g=ctx.createLinearGradient(0,0,0,hz); g.addColorStop(0,'#0a1430'); g.addColorStop(.7,'#16305a'); g.addColorStop(1,'#2c4f7a');
+    ctx.fillStyle=g; ctx.fillRect(0,0,w,hz+1);
+    stars.forEach(s=>{ ctx.fillStyle='rgba(230,240,255,'+(.35+.35*Math.sin(t*.001+s.p)).toFixed(2)+')'; ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,7); ctx.fill(); });
+    const mx=w*.76, my=hz*.38;
+    const mg=ctx.createRadialGradient(mx,my,0,mx,my,120); mg.addColorStop(0,'rgba(255,248,225,.55)'); mg.addColorStop(1,'rgba(255,248,225,0)'); ctx.fillStyle=mg; ctx.fillRect(mx-130,my-130,260,260);
+    ctx.fillStyle='#fff6df'; ctx.beginPath(); ctx.arc(mx,my,22,0,7); ctx.fill();
+    ctx.fillStyle='#0c1b38'; ctx.beginPath(); ctx.moveTo(0,hz); for(let x=0;x<=w;x+=16){ ctx.lineTo(x, hz-18-Math.sin(x*.004)*22-Math.sin(x*.011+1)*10-(x<w*.3?30*Math.sin(x/w*Math.PI*3.2):0)); } ctx.lineTo(w,hz); ctx.fill();
+    g=ctx.createLinearGradient(0,hz,0,h); g.addColorStop(0,'#1c3a64'); g.addColorStop(1,'#050d1f'); ctx.fillStyle=g; ctx.fillRect(0,hz,w,h-hz);
+    for(let i=0;i<34;i++){ const y=hz+6+i*i*.5; if(y>h) break; const len=(30-i*.5)*(.6+.4*Math.sin(t*.002+i)); ctx.fillStyle='rgba(255,240,205,'+(.5-i*.012).toFixed(3)+')'; ctx.fillRect(mx-len/2+Math.sin(t*.0015+i*.7)*6, y, Math.max(2,len), 1.4); }
+    const pens=[[w*.18,hz+(h-hz)*.36,w*.13],[w*.42,hz+(h-hz)*.5,w*.17],[w*.72,hz+(h-hz)*.62,w*.2]];
+    pens.forEach((p,i)=>{ const [x,y,rx]=p, ry=rx*.22;
+      ctx.strokeStyle='rgba(150,180,215,.35)'; ctx.lineWidth=2; ctx.beginPath(); ctx.ellipse(x,y,rx,ry,0,0,7); ctx.stroke();
+      ctx.strokeStyle='rgba(150,180,215,.18)'; ctx.beginPath(); ctx.ellipse(x,y+4,rx*.96,ry*.92,0,0,7); ctx.stroke();
+      ctx.fillStyle='rgba(20,40,80,.35)'; ctx.beginPath(); ctx.ellipse(x,y+3,rx*.93,ry*.86,0,0,7); ctx.fill();
+      for(let k=0;k<4;k++){ const ang=k*Math.PI/2+.4; const bx=x+Math.cos(ang)*rx, by=y+Math.sin(ang)*ry; const on=((t/1000+i*.6+k*.35)%2.4)<.18;
+        ctx.fillStyle='#1a2a4a'; ctx.fillRect(bx-2,by-6,4,6);
+        const col = (i===2&&k===1) ? '255,190,90' : '120,255,190';
+        ctx.fillStyle='rgba('+col+','+(on?1:.35)+')'; ctx.beginPath(); ctx.arc(bx,by-8,on?3:2,0,7); ctx.fill();
+        if(on){ const bg=ctx.createRadialGradient(bx,by-8,0,bx,by-8,22); bg.addColorStop(0,'rgba('+col+',.4)'); bg.addColorStop(1,'rgba('+col+',0)'); ctx.fillStyle=bg; ctx.fillRect(bx-22,by-30,44,44); }
+      }
+    });
+    ctx.strokeStyle='rgba(160,190,230,.08)'; ctx.lineWidth=1;
+    for(let i=0;i<14;i++){ const y=hz+20+i*((h-hz)/14); ctx.beginPath(); for(let x=0;x<=w;x+=20){ const yy=y+Math.sin(x*.02+t*.0008+i)*1.5; x?ctx.lineTo(x,yy):ctx.moveTo(x,yy);} ctx.stroke(); }
+  }
+  addScene(c, draw, 'site');
+})();
+if ('IntersectionObserver' in window){
+  const io = new IntersectionObserver(es => es.forEach(e => { const s=scenes.find(x=>x.el===e.target); if(s) s.visible=e.isIntersecting; }), {rootMargin:'100px'});
+  scenes.filter(s=>s.layer==='site').forEach(s=>io.observe(s.el));
+} else scenes.forEach(s=>s.visible=true);
+let lastFrame=0;
+const htmlCls = document.documentElement.classList;
+function loop(t){
+  if (!reduce || t-lastFrame>1000){
+    const inApp=htmlCls.contains('in-app'), inAuth=htmlCls.contains('in-auth');
+    for (let i=scenes.length-1;i>=0;i--){ const s=scenes[i];
+      if (!s.el.isConnected){ scenes.splice(i,1); continue; }
+      if ((s.layer==='site' && !inApp && !inAuth && s.visible) || (s.layer==='auth' && inAuth) || (s.layer==='app' && inApp)) s.draw(t); }
+    lastFrame=t;
+  }
+  requestAnimationFrame(loop);
+}
+scenes.forEach(s=>{ if(s.layer==='site') s.draw(0); });
+requestAnimationFrame(loop);
+
+/* ================= CHARTS ================= */
+let gid=0;
+function lineChart(o){
+  const W=o.w||640, H=o.h||220, pl=40, pr=16, pt=16, pb=26, n=o.values.length;
+  const x=i=>pl+(W-pl-pr)*i/(n-1), y=v=>pt+(H-pt-pb)*(1-(v-o.min)/(o.max-o.min));
+  const id='g'+(gid++);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.label||'Chart')}"><defs><linearGradient id="${id}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${o.color}" stop-opacity=".22"/><stop offset="1" stop-color="${o.color}" stop-opacity="0"/></linearGradient></defs>`;
+  for(let k=0;k<=4;k++){ const v=o.min+(o.max-o.min)*k/4, yy=y(v); s+=`<line x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}" stroke="#e6eeeb"/><text x="${pl-6}" y="${yy+3.5}" text-anchor="end">${fmt(v,o.dec??1)}</text>`; }
+  if (o.warn!=null){ const yy=y(o.warn); const below=o.dir!=='above';
+    s+=`<rect x="${pl}" y="${below?yy:pt}" width="${W-pl-pr}" height="${below?(H-pb-yy):(yy-pt)}" fill="#d98a1c" opacity=".07"/><line x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}" stroke="#d98a1c" stroke-dasharray="4 4"/><text x="${W-pr}" y="${yy-5}" text-anchor="end" style="fill:#a5650d">warning ${fmt(o.warn,o.dec??1)}</text>`; }
+  const pts=o.values.map((v,i)=>[x(i),y(clamp(v,o.min,o.max))]);
+  const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join('');
+  s+=`<path d="${d}L${x(n-1)} ${H-pb}L${pl} ${H-pb}Z" fill="url(#${id})"/><path d="${d}" fill="none" stroke="${o.color}" stroke-width="2" stroke-linejoin="round"/>`;
+  if (o.times){ for(let i=0;i<n-1;i+=24) s+=`<text x="${x(i)}" y="${H-8}" text-anchor="${i?'middle':'start'}">${hhmm(o.times[i])}</text>`; s+=`<text x="${x(n-1)}" y="${H-8}" text-anchor="end">now</text>`; }
+  if (o.mark){ const p=pts[o.mark.i]; s+=`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#fff" stroke="#d6453d" stroke-width="2"/><text x="${p[0]+8}" y="${p[1]+14}" style="fill:#b2322b">${esc(o.mark.label)}</text>`; }
+  const e=pts[n-1]; s+=`<circle cx="${e[0]}" cy="${e[1]}" r="7" fill="${o.color}" opacity=".18"/><circle cx="${e[0]}" cy="${e[1]}" r="3.5" fill="${o.color}"/></svg>`;
+  return s;
+}
+function spark(vals, color){ const W=200,H=36, mn=Math.min(...vals), mx=Math.max(...vals), r=(mx-mn)||1;
+  const d=vals.map((v,i)=>(i?'L':'M')+(W*i/(vals.length-1)).toFixed(1)+' '+(3+(H-6)*(1-(v-mn)/r)).toFixed(1)).join('');
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" fill="none" stroke="${color}" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>`; }
+function barChart(){
+  const W=640,H=230,pl=52,pr=10,pt=14,pb=30, bs=S.basins, mx=26000;
+  const y=v=>pt+(H-pt-pb)*(1-v/mx), cw=(W-pl-pr)/bs.length;
+  let s=`<svg class="bars" viewBox="0 0 ${W} ${H}" role="img" aria-label="Revenue and total costs per basin">`;
+  for(let k=0;k<=4;k++){ const v=mx*k/4; s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="#e6eeeb"/><text x="${pl-6}" y="${y(v)+3.5}" text-anchor="end">${k?'€'+(v/1000).toFixed(1)+'k':'€0'}</text>`; }
+  bs.forEach((b,i)=>{ const cost=b.feed+b.maint+b.ops, x0=pl+i*cw+cw*.2, bw=cw*.28;
+    s+=`<rect x="${x0}" y="${y(b.revenue)}" width="${bw}" height="${H-pb-y(b.revenue)}" rx="4" fill="#1d6f6a" class="grow" style="animation-delay:${i*.08}s"><title>${b.name} revenue ${eur(b.revenue)}</title></rect>`;
+    s+=`<rect x="${x0+bw+4}" y="${y(cost)}" width="${bw}" height="${H-pb-y(cost)}" rx="4" fill="#9cc9bf" class="grow" style="animation-delay:${i*.08+.04}s"><title>${b.name} costs ${eur(cost)}</title></rect>`;
+    s+=`<text x="${x0+bw+2}" y="${H-10}" text-anchor="middle">${b.name}</text>`; });
+  return s+'</svg>';
+}
+const chartRange = {do:[3,10,2], temp:[14,32,1], ph:[6.5,9,2]};
+function basinChart(b, m, h){
+  const thr = m==='do'? b.thr.do.warn : m==='ph'? b.thr.ph.max : b.thr.temp.max;
+  let [mn,mx,dec] = chartRange[m];
+  if (m==='temp'){ const lo=Math.min(...b.hist.temp), hi=Math.max(...b.hist.temp, thr); mn=Math.floor(lo-1); mx=Math.ceil(hi+.5); }
+  const mi = m==='do' ? minOf(b.hist.do) : null;
+  return lineChart({values:b.hist[m], times:S.times, min:mn, max:mx, dec, warn:thr, dir:m==='do'?'below':'above', color:'#1d6f6a', h:h||230,
+    label:METRIC[m].label+' in '+b.name+', last 24 hours', mark: mi && mi.v<b.thr.do.warn ? {i:mi.i, label:hhmm(S.times[mi.i])+' · '+fmt(mi.v,2)} : null});
+}
+// showcase chart on the landing page
+(function(){ const b=S.basins[2]; $('#showcaseChart').innerHTML = basinChart(b,'do',200); $('#demoMin').textContent = fmt(b3min.v,1)+' mg/L at '+hhmm(S.times[b3min.i]); })();
+
+/* ================= ACCOUNTS + SESSION ================= */
+S.farm = {name:'Lac Vert', company:'Lac Vert Aquaculture', country:'France'};
+S.accounts = [
+  {name:'Nadia Amrani', email:'nadia@lacvert.farm', pass:'demo1234', role:'owner'},
+  {name:'Karim Benali', email:'karim@lacvert.farm', pass:'demo1234', role:'worker'},
+  {name:'Léa Martin', email:'lea@lacvert.farm', pass:'demo1234', role:'worker'},
+  {name:'Inès Haddad', email:'ines@lacvert.farm', pass:'demo1234', role:'worker'},
+  {name:'Samir Touati', email:'samir@lacvert.farm', pass:'demo1234', role:'technician'}
+];
+['karim','lea','ines','samir'].forEach((k,i)=>{ S.team[i].email = k+'@lacvert.farm'; });
+S.session = null; S.alertTab='open'; S.reportTab='all'; S.simOn = true; S.view = 'overview'; S.readReports = new Set([1,2,3]); S.taskDone = new Set();
+const role = () => S.session ? S.session.role : 'owner';
+const me = () => S.session && S.team.find(t => t.email===S.session.email);
+const initials = n => n.split(/\s+/).map(p=>p[0]).slice(0,2).join('').toUpperCase();
+const ROLE_LABEL = {owner:'Owner', worker:'Worker', technician:'Technician'};
+
+/* ================= ICONS ================= */
+const ICONS = {
+  overview:'<path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z"/>',
+  basins:'<path d="M3 9c3 2 6 2 9 0s6-2 9 0M3 14c3 2 6 2 9 0s6-2 9 0M3 19c3 2 6 2 9 0s6-2 9 0"/>',
+  alerts:'<path d="M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0"/>',
+  reports:'<path d="M4 6h16v12H4zM4 13h5l1 2h4l1-2h5"/>',
+  team:'<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2c3 .2 5.5 2.6 5.5 5.8"/>',
+  shift:'<path d="M8 4h8v3H8zM6 6H5v15h14V6h-1M9 12h6M9 16h4"/>',
+  sensors:'<circle cx="12" cy="12" r="2"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/>',
+  maintenance:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z"/>',
+  gauge:'<path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l4-6"/>',
+  fish:'<path d="M3 12c3-4.5 9-4.5 12 0-3 4.5-9 4.5-12 0z"/><path d="M15 12l5-3.5v7z"/>',
+  euro:'<path d="M17 6.5A6 6 0 1 0 17 17.5M4 10h9M4 14h9"/>',
+  chat:'<path d="M4 12c3-4.5 9-4.5 12 0-3 4.5-9 4.5-12 0z"/><path d="M16 12l4-3v6z"/>'
+};
+const ic = (n,s=18) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
+const FISH_SVG = '<svg viewBox="0 0 30 20" aria-hidden="true"><path d="M2 10c5-7.4 14-7.4 19 0-5 7.4-14 7.4-19 0z" fill="currentColor"/><path d="M20.5 10 28 4.2v11.6z" fill="currentColor"/></svg>';
+
+/* ================= SMALL BUILDING BLOCKS ================= */
+function relevantAlerts(){
+  const open=openAlerts();
+  if (role()==='technician') return open.filter(a=>a.kind==='sensor');
+  if (role()==='worker') return open.filter(a=>a.kind==='water');
+  return open;
+}
+function navItems(){
+  const r=role();
+  if (r==='owner') return [['overview','Overview','overview'],['basins','Basins','basins'],['alerts','Alerts','alerts'],['reports','Reports','reports'],['team','Team','team']];
+  const p=(me()||{}).perms||{};
+  if (r==='worker') return [['ops','Today','gauge'], p.alerts&&['alerts','Alerts','alerts'], p.reports&&['shift','Shift report','shift'], p.sensors&&['sensors','Sensor health','sensors'], p.maintenance&&['maintenance','Maintenance','maintenance']].filter(Boolean);
+  return [['bench','Today','gauge'], p.alerts&&['alerts','Hardware alerts','alerts'], p.sensors&&['sensors','Sensor health','sensors'], p.maintenance&&['maintenance','Maintenance','maintenance'], p.basins&&['ops','Basins','basins'], p.reports&&['shift','Shift report','shift']].filter(Boolean);
+}
+function renderNav(){
+  if (!S.session) return;
+  const n = relevantAlerts().length, unread = S.reports.filter((r,i)=>!S.readReports.has(i)).length;
+  $('#sideNav').innerHTML = navItems().map(([v,l,i]) => { const cur = S.view===v || (S.view==='basin' && (v==='basins'||v==='ops'));
+    const cnt = v==='alerts'&&n ? `<span class="count">${n}</span>` : v==='reports'&&unread ? `<span class="count" style="background:var(--current)">${unread}</span>` : '';
+    return `<button type="button" data-action="nav" data-view="${v}" ${cur?'aria-current="page"':''}><span class="lbl">${ic(i,17)}${l}</span>${cnt}</button>`; }).join('');
+  const bd=$('#bellDot'); if (bd) bd.textContent = n ? n : '';
+}
+const badge = st => `<span class="badge b-${st}">${st[0].toUpperCase()+st.slice(1)}</span>`;
+function liveVal(b,m){ return `<b class="${cls(m,b)}" data-live="${b.id}:${m}">${fmt(b.live[m],METRIC[m].dec)}</b>`; }
+const lvl = b => clamp(Math.round(satPct(b)*.85), 18, 92);
+function tank(b){
+  return `<div class="tank ${statusOf(b)}" data-tank="${b.id}" style="--lvl:${lvl(b)}%"><div class="water"><svg class="wv back" viewBox="0 0 400 10" preserveAspectRatio="none" aria-hidden="true"><path d="M0 6Q25 0 50 6T100 6T150 6T200 6T250 6T300 6T350 6T400 6V10H0Z" fill="currentColor"/></svg><svg class="wv" viewBox="0 0 400 10" preserveAspectRatio="none" aria-hidden="true"><path d="M0 5Q25 10 50 5T100 5T150 5T200 5T250 5T300 5T350 5T400 5V10H0Z" fill="currentColor"/></svg></div>
+    <span class="tank-fish" style="bottom:14%;animation-duration:17s">${FISH_SVG}</span><span class="tank-fish" style="bottom:34%;width:14px;animation-duration:23s;animation-delay:-9s">${FISH_SVG}</span><span class="tank-fish" style="bottom:8%;width:16px;animation-duration:20s;animation-delay:-4s">${FISH_SVG}</span>
+    <span class="tank-lbl mono" data-live="${b.id}:sat">${Math.round(satPct(b))}% O₂ saturation</span></div>`;
+}
+function basinCard(b){
+  return `<div class="tile basin-card" data-action="open-basin" data-id="${b.id}" tabindex="0" role="button" aria-label="Open ${b.name}">
+    <div class="row"><div><h3>${b.name}</h3><span class="mini">${b.thr.name}</span></div><span data-status="${b.id}">${badge(statusOf(b))}</span></div>
+    ${tank(b)}
+    <div class="readings3"><div><span>Oxygen mg/L</span>${liveVal(b,'do')}</div><div><span>Temp °C</span>${liveVal(b,'temp')}</div><div><span>pH</span>${liveVal(b,'ph')}</div></div>
+    <div class="basin-foot"><span>${b.fish.toLocaleString('en-US')} fish · ${b.capacity} m³ · ${(b.fish/b.capacity).toFixed(1)} per m³</span><span class="badge b-est">Low-O₂ risk ${Math.round(b.risk*100)}% · estimate</span></div>
+  </div>`;
+}
+// Semicircle gauge with the species' safe band
+function gauge(b, m){
+  const v=b.live[m], t=b.thr;
+  const R = m==='do' ? [0,12] : m==='ph' ? [5.5,9.5] : [t.temp.min-6, t.temp.max+6];
+  const safe = m==='do' ? [t.do.warn, R[1]] : m==='ph' ? [t.ph.min, t.ph.max] : [t.temp.min, t.temp.max];
+  const cx=70, cy=72, r=56, P=val=>{ const a=Math.PI*(1-(clamp(val,R[0],R[1])-R[0])/(R[1]-R[0])); return [cx+r*Math.cos(a), cy-r*Math.sin(a)]; };
+  const arc=(a,b2,col,w)=>{ const p1=P(a), p2=P(b2); return `<path d="M${p1[0].toFixed(1)} ${p1[1].toFixed(1)}A${r} ${r} 0 0 1 ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round"/>`; };
+  const st = cls(m,b), col = st==='bad'?'#d6453d':st==='meh'?'#d98a1c':'#1d6f6a', pv=P(v);
+  return `<svg viewBox="0 0 140 84" role="img" aria-label="${METRIC[m].label} ${fmt(v,METRIC[m].dec)}, safe range ${safe[0]} to ${safe[1]}">
+    ${arc(R[0],R[1],'#e6efec',10)}${arc(safe[0],safe[1],'#bfe3d8',10)}${m==='do'?arc(t.do.crit,t.do.warn,'#f6dcb2',10)+arc(R[0],t.do.crit,'#f4c6c2',10):''}
+    <circle cx="${pv[0].toFixed(1)}" cy="${pv[1].toFixed(1)}" r="7" fill="#fff" stroke="${col}" stroke-width="3"/>
+    <text x="14" y="82" font-size="8" fill="#7b8d91" font-family="Geist Mono, monospace">${R[0]}</text><text x="126" y="82" font-size="8" fill="#7b8d91" text-anchor="end" font-family="Geist Mono, monospace">${R[1]}</text></svg>`;
+}
+function gaugeTile(b,m){
+  const t=b.thr, safe = m==='do' ? `warning below ${t.do.warn} mg/L` : m==='ph' ? `safe ${t.ph.min}–${t.ph.max}` : `safe ${t.temp.min}–${t.temp.max} °C`;
+  return `<div class="tile"><span class="k">${METRIC[m].label}</span><div class="gauge"><div data-gauge="${b.id}:${m}" style="width:100%;display:grid;justify-items:center">${gauge(b,m)}</div>
+    <span class="gv">${liveVal(b,m)}<small>${METRIC[m].unit}</small></span><span class="gs">${safe}${m==='do'?` · <span data-live="${b.id}:sat">${Math.round(satPct(b))}% O₂ saturation</span>`:''}</span></div></div>`;
+}
+function countUp(v, kind){ return `<span data-countup="${v}" data-fmt="${kind||'int'}">${kind==='eur'?eur(v):Math.round(v).toLocaleString('en-US')}</span>`; }
+function alertItem(a){
+  const b=B(a.basin), done=a.resolved, who = a.kind==='sensor' ? 'the technician' : 'the worker on shift';
+  return `<div class="alert sev-${a.severity} ${done?'done':''}" data-aid="${a.id}"><span class="stripe"></span>
+    <button class="check ${done?'on':''}" type="button" data-action="check" data-id="${a.id}" aria-pressed="${done}" aria-label="${done?'Resolved. Click to reopen':'Mark as resolved'}: ${esc(a.title)}" title="${done?'Resolved · click to reopen':'Mark as resolved'}">${CHECK}</button>
+    <div><div class="row" style="justify-content:flex-start;gap:8px"><h4>${esc(a.title)}</h4><span class="badge ${a.severity==='high'?'b-critical':a.severity==='medium'?'b-warning':'b-info'}">${a.severity}</span><span class="badge" style="background:#eef3f2;color:#3b5559">${a.kind==='sensor'?'hardware':'water'}</span></div>
+      <p><b style="color:var(--ink)">${b.name}</b> · ${b.thr.name} · ${METRIC[a.metric].label} · ${hhmm(a.time)}</p><p>${esc(a.text)}</p>
+      <p class="a-status ${done?'ok':''}">${done?`✓ Resolved by ${esc(a.by||'')} at ${hhmm(a.resolvedAt||Date.now())} · “${esc(a.note||'')}”`:`Open · waiting for ${who}`}</p></div>
+    <div class="acts">${done?'':`<button class="small-btn" data-action="ask" data-q="Explain alert ${a.id}">${ic('chat',14)}Explain</button>`}</div></div>`;
+}
+const fmtDate = ts => new Date(ts).toLocaleString('en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit'});
+const greeting = () => { const h=new Date().getHours(); return h<5?'Good night':h<12?'Good morning':h<18?'Good afternoon':'Good evening'; };
+function shiftInfo(){ const m=me(); if(!m) return null; const [s,e]=m.shift.split('–').map(x=>{const [h,mi]=x.split(':').map(Number); return h+mi/60;});
+  const n=hourOf(Date.now()); let len=(e-s+24)%24||24, el=(n-s+24)%24; const on = el<=len; return {s:m.shift.split('–')[0], e:m.shift.split('–')[1], on, pct: on?Math.round(100*el/len):0, left: on? len-el : null}; }
+
+/* ================= HOME SCREEN BUILDING BLOCKS (same language as the website) ================= */
+const today = () => new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+const numWord = n => ['No','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten'][n] || String(n);
+const CHIP_POS = ['left:5%;top:60%','left:28%;top:76%','left:55%;top:63%','left:77%;top:77%'];
+function basinChips(action){
+  return S.basins.map((b,i)=>{ const st=statusOf(b);
+    return `<button class="reading home-chip st-${st}" style="${CHIP_POS[i]}" data-chipst="${b.id}" ${action?`data-action="${action}" data-id="${b.id}"`:'tabindex="-1"'} aria-label="${b.name}, oxygen ${fmt(b.live.do,2)} mg/L, ${st}">
+      <span class="lbl"><i></i>${b.name} · ${b.thr.name.toLowerCase()}</span><b data-live="${b.id}:do">${fmt(b.live.do,2)}</b><span class="u">mg/L O₂</span></button>`; }).join('');
+}
+function homeHero(o){
+  return `<section class="home-hero">
+    <div class="home-media"><canvas id="ovCanvas" aria-hidden="true"></canvas></div>
+    <div class="home-copy"><span class="eyebrow">${o.eyebrow}</span><h2 id="homeTitle">${o.title}</h2><p>${o.text}</p><div class="hero-ctas">${o.ctas}</div>
+      ${o.progress!=null?`<div class="shift-bar light" aria-label="Shift ${o.progress}% done"><i style="width:${o.progress}%"></i></div>`:''}</div>
+  </section>`;
+}
+const stColor = st => st==='critical'?'var(--crit)':st==='warning'?'var(--warn)':'var(--ok)';
+const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const CHECK_SM = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+function farmDots(){ const el=$('#farmDots'); if(!el) return; const sts=S.basins.map(statusOf), need=sts.filter(x=>x!=='healthy').length;
+  el.innerHTML = sts.map((st,i)=>`<i title="${S.basins[i].name}: ${st}" style="background:${st==='critical'?'#ff8f86':st==='warning'?'#ffc96b':'#7fe0b5'}"></i>`).join('')+`<span>${need?need+' of '+sts.length+' need attention':'all basins healthy'}</span>`; }
+const ticket = (label, value, note, alert) => `<div class="card${alert?' alert-card':''}"><small>${label}</small><b>${value}</b><span class="note">${note}</span></div>`;
+const centered = (pill, h) => `<div class="centered-h"><span class="pill"><i></i>${pill}</span><h2 class="h2">${h}</h2></div>`;
+const act = (n, time, title, text, action, arg) => `<div class="act" ${action==='open-basin'?`data-action="open-basin" data-id="${arg}"`:`data-action="ask" data-q="${esc(arg)}"`} role="button" tabindex="0"><span class="big">${n}</span><div><time class="mono">${time}</time><h4>${title}</h4><p>${text}</p></div></div>`;
+
+/* ================= VIEWS ================= */
+const views = {
+  overview(){
+    const open=openAlerts(), cost=S.basins.reduce((s,b)=>s+b.feed+b.maint+b.ops,0), rev=S.basins.reduce((s,b)=>s+b.revenue,0);
+    const need=S.basins.filter(b=>statusOf(b)!=='healthy').length, b3=B('b3'), first=S.session.name.split(' ')[0];
+    return `
+    ${homeHero({
+      eyebrow:`${today()} · ${esc(S.farm.name)}`,
+      title:`${greeting()}, ${esc(first)}.<br>${need?`${need===1?'One basin needs':numWord(need)+' basins need'} you <em>today.</em>`:`Every basin is <em>calm.</em>`}`,
+      text:`${open.length} open alert${open.length===1?'':'s'}. The most urgent: Basin 3 oxygen fell to ${fmt(b3min.v,1)} mg/L last night.`,
+      ctas:`<button class="btn" data-action="nav" data-view="alerts">See open alerts</button><button class="btn ghost" data-action="ask" data-q="What needs my attention today?">${ic('chat',15)}Ask about today</button>`})}
+    <div class="tickets">
+      ${ticket('Basins', countUp(S.basins.length), `${S.basins.filter(b=>statusOf(b)==='healthy').length} healthy`)}
+      ${ticket('Open alerts', `<span data-open-count>${open.length}</span>`, `${open.filter(a=>a.kind==='sensor').length} hardware · ${open.filter(a=>a.kind==='water').length} water`, true)}
+      ${ticket('Profit this quarter', countUp(rev-cost,'eur'), `${Math.round(100*(rev-cost)/rev)}% margin`)}
+      ${ticket('Team', countUp(S.team.length), `${S.team.filter(t=>t.role==='Worker').length} workers · 1 technician`)}
+    </div>
+    <div class="grid g2">
+      <div class="tile"><div class="section-title"><h3>Today's actions</h3><span class="mini">in order</span></div>
+        <ol class="todo">
+          <li data-action="ask" data-q="Why did oxygen drop in Basin 3 last night?"><span class="n">1</span><div><b>Cut the Basin 3 evening feed by a third</b><span>18:00 · ${Math.round(b3.risk*100)}% chance of another oxygen dip before dawn (estimate)</span></div></li>
+          <li data-action="open-basin" data-id="b3"><span class="n">2</span><div><b>Run the Basin 3 aerator until sunrise</b><span>22:00 · night worker Inès Haddad</span></div></li>
+          <li data-action="ask" data-q="Is the Basin 4 alert a sensor problem?"><span class="n">3</span><div><b>Check the Basin 4 temperature probe</b><span>today · stuck at 26.0 °C, Samir Touati</span></div></li>
+        </ol></div>
+      <div class="tile"><div class="section-title"><h3>Basins</h3><button class="small-btn" data-action="nav" data-view="basins">Open basins</button></div>
+        <div class="blist">${S.basins.map(b=>`<button class="brow" data-action="open-basin" data-id="${b.id}"><span class="sdot" data-sdot="${b.id}" style="background:${stColor(statusOf(b))}"></span><span class="bn"><b>${b.name}</b><span>${b.thr.name}</span></span><span class="bv mono">${liveVal(b,'do')} <small>mg/L O₂</small></span><span data-status="${b.id}">${badge(statusOf(b))}</span></button>`).join('')}</div></div>
+    </div>
+    <section class="tile" style="gap:14px">
+      <div class="section-title"><h3>Revenue this quarter</h3><button class="small-btn" data-action="ask" data-q="How can I raise revenue?">${ic('chat',14)}How can I raise it?</button></div>
+      <div class="money">
+        <div><span class="k">Revenue</span><span class="v">${countUp(rev,'eur')}</span></div>
+        <div><span class="k">Costs · feed is ${Math.round(100*S.basins.reduce((s,b)=>s+b.feed,0)/cost)}%</span><span class="v">${countUp(cost,'eur')}</span></div>
+        <div><span class="k">Profit</span><span class="v" style="color:var(--ok)">${countUp(rev-cost,'eur')}</span></div>
+      </div>
+      <span class="mini"><span style="color:#1d6f6a">■</span> revenue &nbsp; <span style="color:#9cc9bf">■</span> costs, per basin</span>
+      <div class="chart">${barChart()}</div>
+    </section>`;
+  },
+  ops(){
+    const si=shiftInfo(), myName=S.session.name, first=myName.split(' ')[0];
+    const mine=S.tasks.filter(t=>t.who===myName || /aerator|feed/i.test(t.title));
+    const rel=relevantAlerts(), canOpen=!!((me()||{}).perms||{}).basins;
+    const title = si&&si.on ? `${greeting()}, ${esc(first)}.<br>${Math.floor(si.left)} h ${Math.round((si.left%1)*60)} min left on <em>your shift.</em>` : `${greeting()}, ${esc(first)}.<br>You're <em>off shift</em> right now.`;
+    return `
+    ${homeHero({
+      eyebrow:`${today()} · shift ${si?si.s+'–'+si.e:''}`, title,
+      text: rel.length ? `${rel.length} water alert${rel.length>1?'s':''} open. Start with Basin 3: oxygen fell under the trout warning level last night.` : 'No water alerts open. Walk the basins and note anything unusual in your shift report.',
+      ctas:`<button class="btn" data-action="ask" data-q="What should I do first on this shift?">${ic('chat',15)}What should I do first?</button>${navItems().some(n=>n[0]==='shift')?'<button class="btn ghost" data-action="nav" data-view="shift">Write shift report</button>':''}`,
+      progress: si&&si.on ? si.pct : null})}
+    <div class="tickets">
+      ${ticket('Water alerts', `<span data-open-count-rel>${rel.length}</span>`, `${rel.filter(a=>a.severity==='high').length} high severity`, true)}
+      ${ticket('My open tasks', String(mine.filter(t=>!S.taskDone.has(S.tasks.indexOf(t))).length), 'tick them off below')}
+      ${ticket('Healthy basins', `${S.basins.filter(b=>statusOf(b)==='healthy').length}<sup>/${S.basins.length}</sup>`, 'live status')}
+      ${ticket('Overnight O₂ low', fmt(b3min.v,1)+'<sup>mg/L</sup>', `Basin 3 at ${hhmm(S.times[b3min.i])}`)}
+    </div>
+    <div class="grid g2">
+      <div class="tile"><div class="section-title"><h3>My tasks</h3><span class="mini">${mine.length} assigned</span></div>
+        ${mine.length?mine.map(t=>{const k=S.tasks.indexOf(t); return `<label class="task ${S.taskDone.has(k)?'done':''}"><input type="checkbox" data-task="${k}" ${S.taskDone.has(k)?'checked':''}><span><span class="t">${esc(t.title)}</span><span class="mini">due ${esc(t.due)}</span></span></label>`;}).join(''):'<p class="mini">No tasks assigned to you.</p>'}</div>
+      <div class="tile"><div class="section-title"><h3>Needs attention</h3>${navItems().some(n=>n[0]==='alerts')?'<button class="small-btn" data-action="nav" data-view="alerts">All alerts</button>':''}</div>
+        <div class="blist">${rel.slice(0,4).map(a=>`<div class="brow" style="cursor:default"><span class="sdot" style="background:${a.severity==='high'?'var(--crit)':'var(--warn)'}"></span><span class="bn"><b>${B(a.basin).name}</b><span>${esc(a.title)}</span></span><span></span><span class="badge ${a.severity==='high'?'b-critical':'b-warning'}">${a.severity}</span></div>`).join('')||'<p class="mini">Nothing open.</p>'}</div></div>
+    </div>
+    ${canOpen?`<div class="grid g2">${S.basins.map(basinCard).join('')}</div>`:''}`;
+  },
+  bench(){
+    const first=S.session.name.split(' ')[0], bad=S.sensors.filter(x=>x.status!=='OK'), hw=relevantAlerts(), openTasks=S.tasks.filter(t=>t.status!=='fixed');
+    return `
+    ${homeHero({
+      eyebrow:`${today()} · ${esc(S.farm.name)} · ${S.sensors.length} probes`,
+      title:`${greeting()}, ${esc(first)}.<br>${bad.length?`${numWord(bad.length)} probe${bad.length>1?'s':''} need <em>your hands.</em>`:'Every probe reads <em>normally.</em>'}`,
+      text: bad.map(x=>`${x.id} in ${B(x.basin).name} is ${x.status.toLowerCase()}.`).join(' ') || 'Nothing to fix right now.',
+      ctas:`<button class="btn" data-action="ask" data-q="Is the Basin 4 alert a sensor problem?">${ic('chat',15)}Is Basin 4 a sensor problem?</button>${navItems().some(n=>n[0]==='sensors')?'<button class="btn ghost" data-action="nav" data-view="sensors">Open sensor health</button>':''}`})}
+    <div class="tickets">
+      ${ticket('Probes OK', `${S.sensors.length-bad.length}<sup>/${S.sensors.length}</sup>`, bad.map(x=>x.id).join(' · ')||'all fine')}
+      ${ticket('Hardware alerts', `<span data-open-count-rel>${hw.length}</span>`, 'stuck, drifting or broken', true)}
+      ${ticket('Open tasks', String(openTasks.length), `${openTasks.filter(t=>t.status==='in progress').length} in progress`)}
+      ${ticket('Last calibration', '9<sup>Nov</sup>', 'next round in 30 days')}
+    </div>
+    <div class="grid g2">
+      <div class="tile"><div class="section-title"><h3>Hardware alerts</h3>${navItems().some(n=>n[0]==='alerts')?'<button class="small-btn" data-action="nav" data-view="alerts">Open queue</button>':''}</div>
+        <div class="list">${hw.length?hw.map(a=>alertItem(a)).join(''):'<p class="mini">No hardware alerts open.</p>'}</div></div>
+      <div class="tile"><div class="section-title"><h3>Maintenance tasks</h3>${navItems().some(n=>n[0]==='maintenance')?'<button class="small-btn" data-action="nav" data-view="maintenance">Log work</button>':''}</div>
+        ${openTasks.map(t=>`<div class="task"><span><span class="t"><b>${esc(t.title)}</b></span><span class="mini">${esc(t.who)} · due ${esc(t.due)}</span></span><span class="badge ${t.status==='pending'?'b-warning':'b-info'}" style="margin-left:auto">${t.status}</span></div>`).join('')||'<p class="mini">No open tasks.</p>'}</div>
+    </div>`;
+  },
+  basins(){
+    return `<div class="section-title"><p class="mini">Live readings from ${S.sensors.length} probes. The water level shows oxygen saturation; colour shows status.</p><div class="row"><span class="badge b-healthy">${S.basins.filter(b=>statusOf(b)==='healthy').length} healthy</span><span class="badge b-warning">${S.basins.filter(b=>statusOf(b)==='warning').length} warning</span><span class="badge b-critical">${S.basins.filter(b=>statusOf(b)==='critical').length} critical</span></div></div>
+      <div class="grid g2">${S.basins.map(basinCard).join('')}</div>`;
+  },
+  basin(){
+    const b=B(S.basinId), m=S.metric, mi=minOf(b.hist.do), own=role()==='owner';
+    const bAlerts = S.alerts.filter(a=>a.basin===b.id).slice(0,4), bSensors=S.sensors.filter(s=>s.basin===b.id);
+    return `
+    <div class="row"><button class="small-btn" data-action="back">← ${role()==='owner'?'All basins':'Back'}</button><div class="row"><span data-status="${b.id}">${badge(statusOf(b))}</span><button class="small-btn primary" data-action="ask" data-q="Explain ${b.name} oxygen curve">${ic('chat',14)}Explain this basin</button></div></div>
+    <div class="grid g4">
+      ${gaugeTile(b,'do')}${gaugeTile(b,'temp')}${gaugeTile(b,'ph')}
+      <div class="tile"><span class="k">Overnight oxygen low</span><span class="v">${fmt(mi.v,2)}<small>mg/L</small></span><span class="mini">at ${hhmm(S.times[mi.i])} · warning below ${b.thr.do.warn} mg/L</span>
+        ${tank(b)}<span class="mini">${b.fish.toLocaleString('en-US')} fish in ${b.capacity} m³</span></div>
+    </div>
+    <div class="tile"><div class="row"><h3>Last 24 hours</h3><div class="tabs" role="tablist" aria-label="Metric">${['do','temp','ph'].map(k=>`<button role="tab" aria-selected="${k===m}" data-action="metric" data-m="${k}">${METRIC[k].short}</button>`).join('')}</div></div>
+      <div class="chart-wrap" id="chartWrap"><div class="chart" id="detailChart">${basinChart(b,m)}</div><div class="tip" id="tip"></div></div>
+      <span class="mini">Shaded area: outside the safe range for ${b.thr.name.toLowerCase()} (${esc(b.thr.src)}). Hover the chart to read any point.</span></div>
+    <div class="grid g2">
+      <div class="tile"><div class="row"><h3>Low-oxygen prediction</h3><span class="badge b-est">estimate · model v1.3</span></div>
+        <span class="mini">Chance that oxygen falls below ${b.thr.do.warn} mg/L before 06:00</span>
+        <span class="v">${Math.round(b.risk*100)}%</span>
+        <div class="risk-meter"><i style="width:${Math.round(b.risk*100)}%;background:${b.risk>.5?'var(--crit)':b.risk>.2?'var(--warn)':'var(--ok)'}"></i></div>
+        <div class="feat"><div><span>Evening oxygen decline</span><span class="mono">${b.id==='b3'?'0.31':'0.12'} mg/L per h</span></div><div><span>Water temperature</span><span class="mono" data-live="${b.id}:temp">${fmt(b.live.temp,1)}</span></div><div><span>Evening feed</span><span class="mono">${Math.round(b.fish*.012)} kg</span></div></div></div>
+      ${own?`<div class="tile fin"><div class="row"><h3>Finances · this quarter</h3><span class="mini">Revenue ${eur(b.revenue)}</span></div>
+        <form class="grid g2" data-form="finance" data-id="${b.id}">
+          <label class="field">Fish count<input name="fish" type="number" min="0" value="${b.fish}"></label>
+          <label class="field">Feeding cost (€)<input name="feed" type="number" min="0" value="${b.feed}"></label>
+          <label class="field">Maintenance cost (€)<input name="maint" type="number" min="0" value="${b.maint}"></label>
+          <label class="field">Operational cost (€)<input name="ops" type="number" min="0" value="${b.ops}"></label>
+          <div class="field">Net profit<b class="mono" style="font-size:20px;color:var(--ok)" id="profitOut">${eur(b.revenue-b.feed-b.maint-b.ops)}</b></div>
+          <div style="display:flex;align-items:end;gap:8px;flex-wrap:wrap"><button class="small-btn primary" type="submit">Save changes</button><button class="small-btn" type="button" data-action="ask" data-q="What if I add 500 fish to ${b.name}?">What if…</button></div>
+        </form></div>`
+      :`<div class="tile"><h3>Probes in this basin</h3><div class="list">${bSensors.map(s=>`<div class="row" style="border-bottom:1px solid var(--line);padding-bottom:8px"><span><b class="mono">${s.id}</b> <span class="mini">${METRIC[s.metric].label}</span></span><span class="badge ${s.status==='OK'?'b-healthy':s.status==='Stuck'?'b-critical':'b-warning'}">${s.status}</span></div>`).join('')}</div>
+        <button class="small-btn" style="justify-self:start" data-action="nav" data-view="shift">Report a problem in this basin</button></div>`}
+    </div>
+    <div class="tile"><h3>Alerts in ${b.name}</h3>${bAlerts.length?`<div class="list">${bAlerts.map(a=>alertItem(a,a.resolved)).join('')}</div>`:'<p class="mini">No alerts in the last 24 hours.</p>'}</div>`;
+  },
+  alerts(){
+    const rel = S.alerts.filter(a => role()==='owner' || (role()==='technician' ? a.kind==='sensor' : a.kind==='water'));
+    const open = rel.filter(a=>!a.resolved), done = rel.filter(a=>a.resolved);
+    const list = S.alertTab==='resolved' ? done : open;
+    const head = role()==='owner' ? 'Every alert on the farm. Tick the circle when a problem is handled; the team sees who closed it and why.' : role()==='worker' ? 'Water alerts for every basin. Tick the circle when you have dealt with one and add a short note.' : 'Probes that look stuck, drifting or broken. Tick the circle after the repair.';
+    return `<div class="section-title"><p class="mini" style="max-width:70ch">${head}</p>
+      <div class="tabs" role="tablist" aria-label="Alert status"><button role="tab" aria-selected="${S.alertTab!=='resolved'}" data-action="alert-tab" data-t="open">Open · ${open.length}</button><button role="tab" aria-selected="${S.alertTab==='resolved'}" data-action="alert-tab" data-t="resolved">Done · ${done.length}</button></div></div>
+      <div class="list">${list.length ? list.map(a=>alertItem(a)).join('') : S.alertTab==='resolved'
+        ? '<div class="tile none"><strong>Nothing closed yet.</strong><span>Alerts you tick off appear here with who closed them and the note.</span></div>'
+        : '<div class="tile none"><span class="big-check">'+CHECK+'</span><strong>All clear.</strong><span>Every alert is handled. The alert engine keeps checking every basin.</span></div>'}</div>`;
+  },
+  reports(){
+    const items=S.reports.map((r,i)=>({r,i})).sort((a,b)=>b.r.time-a.r.time);
+    const unread=items.filter(x=>!S.readReports.has(x.i)).length;
+    const shown = S.reportTab==='unread' ? items.filter(x=>!S.readReports.has(x.i)) : items;
+    return `<div class="section-title"><p class="mini">Shift reports from workers and maintenance logs from technicians, newest first.</p>
+      <div class="row"><div class="tabs" role="tablist" aria-label="Reports filter"><button role="tab" aria-selected="${S.reportTab!=='unread'}" data-action="report-tab" data-t="all">All · ${items.length}</button><button role="tab" aria-selected="${S.reportTab==='unread'}" data-action="report-tab" data-t="unread">Unread · ${unread}</button></div>
+      ${unread?'<button class="small-btn" data-action="mark-all">'+CHECK_SM+'Mark all as read</button>':''}</div></div>
+      <div class="list">${shown.length?shown.map(({r,i})=>{ const read=S.readReports.has(i); return `
+      <div class="report ${read?'is-read':''}"><button class="report-open" data-action="open-report" data-i="${i}" aria-label="Open report: ${esc(r.title)}">
+        <div class="row"><b>${read?'':'<span class="unread"></span>'}${esc(r.title)}</b><span class="mini mono">${fmtDate(r.time)}</span></div>
+        <span class="person"><span class="avatar ${r.role==='Technician'?'tech':''}" style="width:24px;height:24px;font-size:10px">${initials(r.author)}</span><span class="mini">${esc(r.author)} · <span class="badge ${r.role==='Worker'?'b-healthy':'b-info'}">${r.role}</span></span></span><p>${esc(r.body)}</p></button>
+        <button class="read-btn ${read?'on':''}" data-action="toggle-read" data-i="${i}" aria-pressed="${read}">${CHECK_SM}${read?'Read':'Mark as read'}</button></div>`; }).join('')
+      : '<div class="tile none"><span class="big-check">'+CHECK+'</span><strong>You\'re all caught up.</strong><span>Every report has been read.</span></div>'}</div>`;
+  },
+  team(){
+    const keys=PERMS.map(p=>p[0]);
+    return `<div class="tile"><div class="section-title"><h3>Workers and technicians</h3><button class="small-btn primary" data-action="add-member">+ Add member</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Member</th><th>Role</th><th>Shift</th><th>Can see</th><th></th></tr></thead><tbody>
+      ${S.team.map((t,i)=>`<tr><td><span class="person"><span class="avatar ${t.role==='Technician'?'tech':''}">${initials(t.name)}</span><div><b>${esc(t.name)}</b><span>${esc(t.email||'')}</span></div></span></td><td><span class="badge ${t.role==='Worker'?'b-healthy':'b-info'}">${t.role}</span></td><td class="mono">${t.shift}</td>
+        <td><span class="perm-chips">${keys.map(k=>`<span class="${t.perms[k]?'':'off'}">${PERMS.find(p=>p[0]===k)[1]}</span>`).join('')}</span></td><td><button class="small-btn" data-action="perm-sheet" data-i="${i}">Edit permissions</button></td></tr>`).join('')}
+      </tbody></table></div><span class="mini">Changes apply right away: the member's menu updates the next time their page refreshes.</span></div>`;
+  },
+  shift(){
+    const mine=S.reports.filter(r=>r.author===S.session.name).sort((a,b)=>b.time-a.time);
+    return `<div class="grid g2"><div class="tile"><h3>Send your shift report</h3><p class="mini">The owner sees it in the reports inbox right away.</p>
+      <form class="stack" data-form="shift" novalidate><label class="field" for="srTitle">Report title<input id="srTitle" name="title" required placeholder="Morning shift: Basin 3 feeding"><span class="err"></span></label>
+      <label class="field" for="srBasin">Basin<select id="srBasin" name="basin"><option value="">All basins</option>${S.basins.map(b=>`<option>${b.name}</option>`).join('')}</select></label>
+      <label class="field" for="srBody">What did you see?<textarea id="srBody" name="body" required placeholder="Fish behaviour, feeding, water colour, equipment…"></textarea><span class="err"></span></label>
+      <button class="small-btn primary" style="justify-self:start" type="submit">Send report</button></form></div>
+      <div class="tile"><h3>Your recent reports</h3>${mine.length?`<div class="list">${mine.map(r=>`<div style="border-bottom:1px solid var(--line);padding-bottom:8px"><b>${esc(r.title)}</b><div class="mini mono">${fmtDate(r.time)}</div></div>`).join('')}</div>`:'<p class="mini">You haven\'t sent a report yet.</p>'}</div></div>`;
+  },
+  sensors(){
+    return `<div class="tile"><div class="section-title"><h3>Sensor health</h3><span class="mini">Checked by the pipeline from rolling statistics on the last 24 h</span></div><div class="table-wrap"><table><thead><tr><th>Probe</th><th>Basin</th><th>Measures</th><th style="width:140px">Last 6 h</th><th>Status</th><th>Evidence</th><th>Calibrated</th></tr></thead><tbody>
+      ${S.sensors.map(s=>{const b=B(s.basin); return `<tr><td class="mono">${s.id}</td><td>${b.name}</td><td>${METRIC[s.metric].label}</td><td>${spark(b.hist[s.metric].slice(-24), s.status==='OK'?'#1d6f6a':s.status==='Stuck'?'#d6453d':'#d98a1c')}</td><td><span class="badge ${s.status==='OK'?'b-healthy':s.status==='Stuck'?'b-critical':'b-warning'}">${s.status}</span></td><td class="mini">${esc(s.note)}</td><td class="mono">${s.cal}</td></tr>`;}).join('')}
+      </tbody></table></div></div>`;
+  },
+  maintenance(){
+    return `<div class="grid g2"><div class="tile"><h3>Log a calibration, repair or replacement</h3><p class="mini">Logs go straight to the owner's reports inbox.</p>
+      <form class="stack" data-form="maint" novalidate><label class="field" for="mtSensor">Probe<select id="mtSensor" name="sensor">${S.sensors.map(s=>`<option>${s.id} · ${B(s.basin).name} · ${METRIC[s.metric].short}</option>`).join('')}</select></label>
+      <div class="two"><label class="field" for="mtType">Work done<select id="mtType" name="type"><option>Calibration</option><option>Repair</option><option>Replacement</option></select></label>
+      <label class="field" for="mtDue">Due date<input id="mtDue" name="due" type="date" required><span class="err"></span></label></div>
+      <label class="field" for="mtDesc">Description<textarea id="mtDesc" name="desc" required placeholder="What you did and what you measured"></textarea><span class="err"></span></label>
+      <button class="small-btn primary" style="justify-self:start" type="submit">Save log</button></form></div>
+      <div class="tile"><div class="section-title"><h3>Maintenance tasks</h3><span class="mini">${S.tasks.filter(t=>t.status!=='fixed').length} open</span></div>
+        ${S.tasks.map((t,k)=>`<div class="task"><span><span class="t"><b>${esc(t.title)}</b></span><span class="mini">${esc(t.who)} · due ${esc(t.due)}</span></span><select aria-label="Status of ${esc(t.title)}" data-status-task="${k}">${['pending','in progress','fixed'].map(s=>`<option ${t.status===s?'selected':''}>${s}</option>`).join('')}</select></div>`).join('')}</div></div>`;
+  },
+  none(){ return `<div class="tile none"><strong>No pages to show yet.</strong><span>Your farm owner hasn't given you access to any page. Ask them to update your permissions.</span></div>`; }
+};
+const PERMS = [['reports','Reports','Send shift reports and see the inbox'],['alerts','Alerts','See and resolve alerts'],['basins','Basins','Open basin dashboards'],['sensors','Sensors','See probe health'],['maintenance','Maintenance','Log and update maintenance']];
+const TITLES = {overview:'Overview', basins:'Basins', basin:'Basin', alerts:'Alerts', reports:'Reports inbox', team:'Team', ops:'Today', bench:'Today', shift:'Shift report', sensors:'Sensor health', maintenance:'Maintenance', none:'Welcome'};
+
+function render(animate){
+  if (!S.session) return;
+  const allowed = navItems().map(n=>n[0]);
+  if (S.view!=='basin' && !allowed.includes(S.view)) S.view = allowed[0] || 'none';
+  if (S.view==='basin' && role()!=='owner' && !((me()||{}).perms||{}).basins) S.view = allowed[0] || 'none';
+  const v=S.view;
+  $('#viewTitle').textContent = v==='basin' ? B(S.basinId).name+' · '+B(S.basinId).thr.name : (role()==='technician'&&v==='alerts'?'Hardware alerts':TITLES[v]);
+  $('#crumbs').textContent = S.farm.name+' · '+ROLE_LABEL[role()];
+  $('#farmName').textContent = S.farm.name; $('#roleChip').textContent = ROLE_LABEL[role()];
+  $('#meName').textContent = S.session.name; $('#meEmail').textContent = S.session.email; $('#meAv').textContent = initials(S.session.name);
+  $('#meAv').className = 'avatar'+(role()==='technician'?' tech':'');
+  $('#content').innerHTML = views[v]();
+  renderNav(); farmDots();
+  const oc=$('#ovCanvas'); if (oc) addScene(oc, makeWater(oc,{palette:'light', fish:24, top:.2}), 'app');
+  if (v==='basin') bindTip();
+  const ht=$('#homeTitle'); if (ht) splitEl(ht);
+  if (hasGsap && !reduce) $$('.home-glass .glass').forEach(g=>gsap.to(g,{opacity:.15,duration:.9,yoyo:true,repeat:-1,ease:'sine.inOut',delay:rand(0,3),repeatDelay:rand(1,4)}));
+  if (animate && hasGsap && !reduce && ht){ gsap.from($$('.w',ht),{opacity:0,y:24,filter:'blur(10px)',duration:1,stagger:.06,ease:'power3.out',clearProps:'filter'}); gsap.from('.home-chip',{opacity:0,scale:.7,duration:.6,stagger:{each:.08,from:'random'},ease:'back.out(2)',delay:.3}); gsap.from('.tickets .card',{y:40,opacity:0,duration:.9,stagger:.08,ease:'power3.out',delay:.2}); }
+  if (animate && hasGsap && !reduce){
+    gsap.from('#content > *:not(.home-hero):not(.tickets)',{opacity:0,y:16,duration:.55,stagger:.05,ease:'power3.out',clearProps:'opacity,transform'});
+    $$('[data-countup]').forEach(el=>{ const to=+el.dataset.countup, k=el.dataset.fmt, o={v:0}; gsap.to(o,{v:to,duration:1.1,ease:'power2.out',onUpdate(){ el.textContent = k==='eur'?eur(o.v):Math.round(o.v).toLocaleString('en-US'); }}); });
+  } else if (!animate) $$('#content .bars rect.grow').forEach(r=>r.style.animation='none');
+}
+function bindTip(){
+  const wrap=$('#chartWrap'), tip=$('#tip'); if(!wrap) return;
+  wrap.addEventListener('mousemove', e => { const svg=$('#detailChart svg'); if(!svg) return; const r=svg.getBoundingClientRect(), b=B(S.basinId), m=S.metric;
+    const vx=(e.clientX-r.left)/r.width*640; const i=clamp(Math.round((vx-40)/(640-56)*(N-1)),0,N-1);
+    tip.style.display='block'; tip.style.left=(e.clientX-wrap.getBoundingClientRect().left)+'px'; tip.style.top=(e.clientY-wrap.getBoundingClientRect().top)+'px';
+    tip.textContent = (i===N-1?'now':hhmm(S.times[i]))+' · '+fmt(b.hist[m][i],METRIC[m].dec)+(METRIC[m].unit?' '+METRIC[m].unit:''); });
+  wrap.addEventListener('mouseleave', () => tip.style.display='none');
+}
+function updateLive(){
+  const cl=$('#clock'); if (cl) cl.textContent = S.simOn ? new Date().toLocaleTimeString('en-GB')+' · live' : 'paused';
+  const hb3=B('b3'), hb1=B('b1'), hb2=B('b2');
+  $$('[data-hero="do"],[data-hero="do2"]').forEach(el=>el.textContent=fmt(hb3.live.do,2));
+  const ht=$('[data-hero="temp"]'); if(ht){ ht.textContent=fmt(hb1.live.temp,1); $('[data-hero="ph"]').textContent=fmt(hb2.live.ph,2); }
+  if (!htmlCls.contains('in-app')) return;
+  $$('[data-live]').forEach(el => { const [id,m]=el.dataset.live.split(':'); const b=B(id);
+    if (m==='sat') el.textContent = Math.round(satPct(b))+'% O₂ saturation';
+    else { el.textContent = fmt(b.live[m], METRIC[m].dec); if (el.tagName==='B') el.className = cls(m,b); } });
+  $$('[data-status]').forEach(el => { el.innerHTML = badge(statusOf(B(el.dataset.status))); });
+  $$('[data-tank]').forEach(el => { const b=B(el.dataset.tank); el.style.setProperty('--lvl', lvl(b)+'%'); el.classList.remove('healthy','warning','critical'); el.classList.add(statusOf(b)); });
+  $$('[data-gauge]').forEach(el => { const [id,m]=el.dataset.gauge.split(':'); el.innerHTML = gauge(B(id),m); });
+  $$('[data-spark]').forEach(el => { el.innerHTML = spark(B(el.dataset.spark).hist.do,'#1d6f6a'); });
+  $$('[data-open-count]').forEach(el => el.textContent = openAlerts().length);
+  farmDots();
+  $$('[data-sdot]').forEach(el=>el.style.background=stColor(statusOf(B(el.dataset.sdot))));
+  $$('[data-open-count-rel]').forEach(el => el.textContent = relevantAlerts().length);
+  $$('[data-chipst]').forEach(el => { const st=statusOf(B(el.dataset.chipst)); el.className='reading home-chip st-'+st; });
+  const dc=$('#detailChart'); if (dc && S.view==='basin') dc.innerHTML = basinChart(B(S.basinId), S.metric);
+  renderNav();
+}
+setInterval(tick, 2000);
+
+/* modal, sheet, toast */
+function modal(html){ $('#modal').innerHTML = html; $('#modalBg').classList.add('open'); const f=$('#modal input, #modal textarea, #modal button'); f&&f.focus(); }
+function closeModal(){ $('#modalBg').classList.remove('open'); }
+function sheet(html){ $('#sheet').innerHTML = html; $('#sheetBg').classList.add('open'); const f=$('#sheet input, #sheet button'); f&&f.focus(); }
+function closeSheet(){ $('#sheetBg').classList.remove('open'); }
+$('#modalBg').addEventListener('click', e => { if (e.target.id==='modalBg' || e.target.closest('[data-close-modal]')) closeModal(); });
+$('#sheetBg').addEventListener('click', e => {
+  if (e.target.id==='sheetBg' || e.target.closest('[data-close-sheet]')) { closeSheet(); return; }
+  const sw=e.target.closest('[data-perm]'); if (sw){ const t=S.team[+sw.dataset.i], k=sw.dataset.perm; t.perms[k]=!t.perms[k]; sw.setAttribute('aria-checked',t.perms[k]); toast(`<b>Saved</b> · ${esc(t.name)} ${t.perms[k]?'can now':'can no longer'} see ${PERMS.find(p=>p[0]===k)[1].toLowerCase()}`); render(); }
+});
+document.addEventListener('keydown', e => { if (e.key==='Escape'){ closeModal(); closeSheet(); closeAI(); $('#drop').classList.remove('open'); } });
+function toast(html){ const t=document.createElement('div'); t.className='toast'; t.innerHTML=html; $('#toasts').appendChild(t); setTimeout(()=>t.remove(), 4200); }
+
+/* field validation: on blur first, cleared as soon as it's fixed */
+function checkField(input){
+  const lab=input.closest('.field'); if(!lab) return true; const err=lab.querySelector('.err'); let msg='';
+  const v=input.value.trim();
+  if (input.required && !v) msg = 'Fill in this field.';
+  else if (input.type==='email' && v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) msg = 'Enter an email like name@farm.com.';
+  else if (input.dataset.min && v.length < +input.dataset.min) msg = `Use at least ${input.dataset.min} characters.`;
+  lab.classList.toggle('invalid', !!msg); if (err) err.textContent = msg; return !msg;
+}
+document.addEventListener('focusout', e => { if (e.target.matches('.field input, .field textarea') && e.target.dataset.dirty && e.target.closest('form[novalidate]')) checkField(e.target); });
+document.addEventListener('input', e => { if (e.target.matches('.field input, .field textarea')) e.target.dataset.dirty='1'; const lab=e.target.closest('.field.invalid'); if (lab) checkField(e.target); });
+const validForm = f => $$('input[required], textarea[required], input[data-min]', f).map(checkField).every(Boolean);
+
+/* app events */
+const actions = {
+  nav(el){ S.view=el.dataset.view; render(true); $('#content').scrollTop=0; },
+  back(){ S.view = role()==='owner' ? 'basins' : 'ops'; render(true); },
+  'open-basin'(el){ S.basinId=el.dataset.id; S.view='basin'; S.metric='do'; render(true); $('#content').scrollTop=0; },
+  metric(el){ S.metric=el.dataset.m; $$('.tabs [role="tab"]').forEach(t=>t.setAttribute('aria-selected', t===el)); $('#detailChart').innerHTML=basinChart(B(S.basinId),S.metric); },
+  ask(el){ openAI(); ask(el.dataset.q); },
+  'open-ai'(){ panel.classList.contains('open') ? closeAI() : openAI(); },
+  sim(){ S.simOn=!S.simOn; $('#simBtn').classList.toggle('off', !S.simOn); updateLive(); toast(S.simOn?'<b>Simulator on</b> · sensors send readings again':'<b>Simulator paused</b> · readings frozen'); },
+  bell(el){ const d=$('#drop'), open=!d.classList.contains('open'); const list=relevantAlerts().slice(0,5);
+    d.innerHTML = `<span class="hd">${list.length?'Open alerts':'No open alerts'}</span>`+list.map(a=>`<button type="button" data-action="goto-alerts"><b>${B(a.basin).name} · ${esc(a.title)}</b><span>${a.severity} · ${hhmm(a.time)}</span></button>`).join('');
+    d.classList.toggle('open', open); el.setAttribute('aria-expanded', open); },
+  'goto-alerts'(){ $('#drop').classList.remove('open'); if (navItems().some(n=>n[0]==='alerts')){ S.view='alerts'; render(true); } },
+  logout(){ const r=role(); S.session=null; closeAI(); toast('<b>Signed out</b>'); location.hash = r==='owner' ? 'owner-auth' : 'worker-auth'; },
+  resolve(el){ const a=S.alerts.find(x=>x.id===el.dataset.id); const b=B(a.basin);
+    modal(`<h3>${a.kind==='sensor'?'Mark probe repaired':'Resolve alert'}</h3><p class="mini">${b.name} · ${esc(a.title)}</p>
+      <form class="stack" data-form="resolve" data-id="${a.id}" novalidate><label class="field" for="resNote">${a.kind==='sensor'?'What did you repair?':'What did you do?'}<textarea id="resNote" name="note" required placeholder="${a.kind==='sensor'?'Cleaned and recalibrated the probe…':'Ran the aerator, cut the evening feed…'}"></textarea><span class="err"></span></label>
+      <div class="row" style="justify-content:flex-end"><button class="small-btn" type="button" data-close-modal>Cancel</button><button class="small-btn ok" type="submit">${CHECK_SM}${a.kind==='sensor'?'Mark repaired':'Mark as resolved'}</button></div></form>`); },
+  'open-report'(el){ const i=+el.dataset.i, r=S.reports[i], read=S.readReports.has(i);
+    modal(`<span class="person"><span class="avatar ${r.role==='Technician'?'tech':''}">${initials(r.author)}</span><div><b>${esc(r.author)}</b><span>${r.role} · ${new Date(r.time).toLocaleString('en-GB')}</span></div></span><h3>${esc(r.title)}</h3><p style="font-size:14.5px;line-height:1.6">${esc(r.body)}</p>
+      <div class="acts-row"><button class="small-btn" data-close-modal>Close</button>${read?`<button class="small-btn" data-action="toggle-read" data-i="${i}" data-close="1">Mark as unread</button>`:`<button class="small-btn ok" data-action="toggle-read" data-i="${i}" data-close="1">${CHECK_SM}Mark as read</button>`}</div>`); },
+  'toggle-read'(el){ const i=+el.dataset.i, was=S.readReports.has(i); was?S.readReports.delete(i):S.readReports.add(i);
+    if (el.dataset.close) closeModal(); toast(was?'<b>Marked as unread</b>':'<b>Marked as read</b> · '+esc(S.reports[i].title)); render(); },
+  'mark-all'(){ S.reports.forEach((r,i)=>S.readReports.add(i)); toast('<b>All reports marked as read</b>'); render(); },
+  'report-tab'(el){ S.reportTab=el.dataset.t; render(); },
+  'alert-tab'(el){ S.alertTab=el.dataset.t; render(); },
+  check(el){ const a=S.alerts.find(x=>x.id===el.dataset.id); if(!a) return;
+    if (a.resolved){ modal(`<h3>Reopen this alert?</h3><p class="mini">${B(a.basin).name} · ${esc(a.title)}. It was resolved by ${esc(a.by||'')}: “${esc(a.note||'')}”.</p><div class="acts-row"><button class="small-btn" data-close-modal>Keep it resolved</button><button class="small-btn primary" data-action="reopen" data-id="${a.id}">Reopen alert</button></div>`); return; }
+    actions.resolve(el); },
+  reopen(el){ const a=S.alerts.find(x=>x.id===el.dataset.id); a.resolved=false; a.note=''; a.by=''; closeModal(); toast('<b>Reopened</b> · '+esc(a.title)); render(); },
+  'add-member'(){ sheet(`<h3>Add a team member</h3><p class="mini">We create their account now. They sign in on the team sign-in page with this email and password.</p><form class="stack" data-form="member" novalidate>
+      <label class="field" for="mName">Full name<input id="mName" name="name" required><span class="err"></span></label>
+      <label class="field" for="mEmail">Email<input id="mEmail" name="email" type="email" required><span class="err"></span></label>
+      <label class="field" for="mPass">Temporary password<input id="mPass" name="pass" type="text" required data-min="8" value="farm-${Math.floor(1000+Math.random()*9000)}"><span class="err"></span></label>
+      <label class="field" for="mRole">Role<select id="mRole" name="role"><option>Worker</option><option>Technician</option></select></label>
+      <div class="two"><label class="field" for="mS">Shift start<input id="mS" name="s" type="time" value="06:00" required></label><label class="field" for="mE">Shift end<input id="mE" name="e" type="time" value="14:00" required></label></div>
+      <div class="row" style="justify-content:flex-end"><button class="small-btn" type="button" data-close-sheet>Cancel</button><button class="small-btn primary" type="submit">Create account</button></div></form>`); },
+  'perm-sheet'(el){ const i=+el.dataset.i, t=S.team[i];
+    sheet(`<span class="person"><span class="avatar ${t.role==='Technician'?'tech':''}">${initials(t.name)}</span><div><b>${esc(t.name)}</b><span>${t.role} · ${t.shift}</span></div></span><h3>What can ${esc(t.name.split(' ')[0])} see?</h3>
+      <div>${PERMS.map(([k,l,d])=>`<div class="perm-row"><div><b>${l}</b><span>${d}</span></div><button class="switch" type="button" role="switch" aria-checked="${!!t.perms[k]}" aria-label="${l}" data-perm="${k}" data-i="${i}"></button></div>`).join('')}</div>
+      <p class="mini">Saved instantly. Their menu shows only the pages you switch on.</p><button class="small-btn" style="justify-self:start" data-close-sheet>Done</button>`); }
+};
+function onAction(e){ const t=e.target.closest('[data-action]'); if (t && actions[t.dataset.action]){ e.preventDefault(); actions[t.dataset.action](t,e); } }
+$('#app').addEventListener('click', e => { if (!e.target.closest('#bellBtn, #drop')) $('#drop').classList.remove('open'); onAction(e); });
+$('#modal').addEventListener('click', onAction);
+$('#app').addEventListener('keydown', e => { if ((e.key==='Enter'||e.key===' ') && e.target.matches('.basin-card, .act')){ e.preventDefault(); actions[e.target.dataset.action](e.target); } });
+$('#app').addEventListener('input', e => { const f=e.target.closest('form[data-form="finance"]'); if(!f) return; const b=B(f.dataset.id), d=new FormData(f);
+  $('#profitOut').textContent = eur(b.revenue - (+d.get('feed')||0) - (+d.get('maint')||0) - (+d.get('ops')||0)); });
+$('#app').addEventListener('change', e => {
+  if (e.target.dataset.task!=null){ const k=+e.target.dataset.task; e.target.checked?S.taskDone.add(k):S.taskDone.delete(k); e.target.closest('.task').classList.toggle('done', e.target.checked); if (e.target.checked) toast('<b>Done</b> · '+esc(S.tasks[k].title)); }
+  if (e.target.dataset.statusTask!=null){ const t=S.tasks[+e.target.dataset.statusTask]; t.status=e.target.value; toast(`<b>Updated</b> · ${esc(t.title)} is ${t.status}`); }
+});
+function onSubmit(e){
+  const f=e.target.closest('form[data-form]'); if(!f) return; e.preventDefault();
+  if (f.hasAttribute('novalidate') && !validForm(f)) return;
+  const d=new FormData(f), kind=f.dataset.form;
+  if (kind==='finance'){ const b=B(f.dataset.id); b.fish=+d.get('fish'); b.feed=+d.get('feed'); b.maint=+d.get('maint'); b.ops=+d.get('ops'); toast(`<b>Saved</b> · ${b.name} finances updated`); render(); }
+  if (kind==='resolve'){ const a=S.alerts.find(x=>x.id===f.dataset.id); a.resolved=true; a.note=d.get('note'); a.by=S.session.name; a.resolvedAt=Date.now(); closeModal();
+    toast(`<b>✓ Resolved</b> · ${B(a.basin).name} · ${esc(a.title)}`); renderNav(); farmDots();
+    $$(`.alert[data-aid="${a.id}"]`).forEach(row=>{ row.classList.add('just-done'); const c=row.querySelector('.check'); c&&c.classList.add('on'); const st=row.querySelector('.a-status'); if(st){ st.classList.add('ok'); st.textContent='✓ Resolved by '+a.by+' just now'; } });
+    setTimeout(()=>render(), 1100); }
+  if (kind==='member'){ const r=d.get('role'), email=d.get('email').trim().toLowerCase();
+    if (S.accounts.some(a=>a.email===email)){ const lab=$('#mEmail').closest('.field'); lab.classList.add('invalid'); lab.querySelector('.err').textContent='This email already has an account.'; return; }
+    S.team.push({name:d.get('name'), email, role:r, shift:d.get('s')+'–'+d.get('e'), perms:{reports:true,alerts:true,basins:r==='Worker',sensors:r!=='Worker',maintenance:r!=='Worker'}});
+    S.accounts.push({name:d.get('name'), email, pass:d.get('pass'), role:r.toLowerCase()});
+    closeSheet(); toast(`<b>Account created</b> · ${esc(d.get('name'))} can sign in with ${esc(email)}`); render(); }
+  if (kind==='shift'){ S.reports.push({author:S.session.name, role:ROLE_LABEL[role()], time:Date.now(), title:d.get('title'), body:(d.get('basin')?d.get('basin')+': ':'')+d.get('body')}); toast('<b>Sent</b> · your report is in the owner\'s inbox'); render(); }
+  if (kind==='maint'){ S.tasks.unshift({title:d.get('type')+': '+d.get('sensor'), who:S.session.name, due:d.get('due'), status:'pending'}); S.reports.push({author:S.session.name, role:'Technician', time:Date.now(), title:d.get('type')+', '+d.get('sensor'), body:d.get('desc')}); toast('<b>Logged</b> · visible in the owner\'s reports'); render(); }
+}
+$('#app').addEventListener('submit', onSubmit); $('#modal').addEventListener('submit', onSubmit); $('#sheet').addEventListener('submit', onSubmit);
+
+/* ================= ASSISTANT (demo mode, template answers on live data) ================= */
+const panel=$('#aiPanel'), aiBody=$('#aiBody');
+let busy=false;
+function openAI(){ panel.classList.add('open'); panel.setAttribute('aria-hidden','false'); if(!aiBody.children.length) resetAI(); setTimeout(()=>$('#aiText').focus({preventScroll:true}),300); }
+function closeAI(){ panel.classList.remove('open'); panel.setAttribute('aria-hidden','true'); }
+function chipsFor(){
+  const v=S.view;
+  if (role()==='technician') return ['Is the Basin 4 alert a sensor problem?','Which sensors need calibration?','Summarize open alerts'];
+  if (role()==='worker') return ['What should I do first on this shift?','Why did oxygen drop in Basin 3 last night?','Summarize open alerts'];
+  if (v==='basin') return ['Explain '+B(S.basinId).name+' oxygen curve','What if I add 500 fish to '+B(S.basinId).name+'?','What is my risk today?'];
+  if (v==='alerts') return ['Summarize open alerts','Is the Basin 4 alert a sensor problem?','Why did oxygen drop in Basin 3 last night?'];
+  return ['What needs my attention today?','Why did oxygen drop in Basin 3 last night?','How can I raise revenue?','What is my risk today?'];
+}
+function resetAI(){
+  aiBody.innerHTML = `<div class="ai-empty"><strong>Ask your farm.</strong><span>I read the live readings, alerts, costs and the oxygen prediction for your basins, check the safe range for each species, and answer with numbers and sources. I ask before I create any task. I can't control equipment, and alerts always come from the alert engine.</span><div class="chips">${chipsFor().map(q=>`<button class="chip" type="button" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div></div>`;
+}
+function md(t){ // tiny safe markdown: paragraphs, bullets, numbered lists, **bold**
+  return esc(t).split(/\n\n+/).map(block => {
+    const lines=block.split('\n');
+    if (lines.every(l=>/^- /.test(l))) return '<ul>'+lines.map(l=>'<li>'+l.slice(2)+'</li>').join('')+'</ul>';
+    if (lines.every(l=>/^\d+\. /.test(l))) return '<ol>'+lines.map(l=>'<li>'+l.replace(/^\d+\. /,'')+'</li>').join('')+'</ol>';
+    return '<p>'+block.replace(/\n/g,'<br>')+'</p>';
+  }).join('').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+}
+const SRC = {fao:'FAO · Water quality in aquaculture', omafra:'OMAFRA 2024 · Rainbow trout profile', ifas:'UF/IFAS FA031 · Dissolved oxygen', srac:'SRAC · Pond aeration', tilapia:'FAO · Nile tilapia fact sheet', carp:'FAO · Common carp fact sheet'};
+
+function answer(q){
+  const s=q.toLowerCase();
+  const bMatch = s.match(/basin\s*(\d)/); const bid = bMatch ? 'b'+bMatch[1] : null;
+  const b3=B('b3'), b2=B('b2'), b4=B('b4');
+  const alertMatch = s.match(/alert (a\d+)/);
+  if (alertMatch){ const a=S.alerts.find(x=>x.id===alertMatch[1]); if(a){ if(a.kind==='sensor') return sensorAns(); if(a.basin==='b3'&&a.metric==='do') return b3Ans(); return genericAlertAns(a);} }
+  if (/sensor|probe|calibrat|stuck|broken/.test(s)) return /calibrat|which sensor/.test(s) ? calibAns() : sensorAns();
+  if (/what if|add \d+|more fish|simulate/.test(s)) return whatIfAns(bid||S.basinId||'b1', +(s.match(/(\d{2,5})\s*fish/)||[0,500])[1]);
+  if (/revenue|profit|money|cost|margin|earn/.test(s)) return revenueAns();
+  if (/risk|danger/.test(s)) return riskAns();
+  if (/summar|open alerts|alerts/.test(s)) return alertsAns();
+  if (/attention|today|first|shift|priorit/.test(s)) return todayAns();
+  if (/oxygen|o2|curve|drop|explain/.test(s)) return (!bid||bid==='b3') ? b3Ans() : curveAns(B(bid));
+  if (/ph|acid/.test(s)) return genericAlertAns(S.alerts.find(a=>a.basin==='b2'&&a.metric==='ph')||S.alerts[0]);
+  return {steps:[], text:"I can help with this farm's water, alerts, sensors, costs and fish-farming practice. That question is outside what I can answer here.\n\nTry one of these instead:", followups:chipsFor(), refusal:true};
+}
+function b3Ans(){ const b=B('b3'), mi=minOf(b.hist.do), t=hhmm(S.times[mi.i]);
+  return {steps:['get_readings(basin_3, oxygen, 24h)','get_basin_status(basin_3)','search_knowledge("night oxygen trout")'],
+    text:`Oxygen in **Basin 3** fell to **${fmt(mi.v,2)} mg/L at ${t}**, under the **7.0 mg/L** warning level for rainbow trout. Right now it is ${fmt(b.live.do,2)} mg/L (${Math.round(satPct(b))}% of saturation at ${fmt(b.live.temp,1)} °C).\n\nThis is the normal night pattern, made worse in this basin: algae stop making oxygen after sunset but keep using it until dawn, so the low comes just before sunrise. The evening feed adds demand, and trout need more oxygen than the tilapia and carp in your other basins.\n\n1. Cut tonight's evening feed in Basin 3 by about a third.\n2. Run the aerator from 22:00 until after sunrise.\n3. Check the reading again at 05:00.`,
+    chart:{b:'b3', m:'do'}, sources:[SRC.fao, SRC.omafra, SRC.srac],
+    action:{label:'Run the Basin 3 aerator 22:00–07:00 tonight', who:'Inès Haddad', due:'Tonight'},
+    followups:['What is my risk today?','What if I add 500 fish to Basin 3?']}; }
+function curveAns(b){ const mi=minOf(b.hist.do), mx=maxOf(b.hist.do);
+  return {steps:[`get_readings(${b.id.replace('b','basin_')}, oxygen, 24h)`,`get_basin_status(${b.id.replace('b','basin_')})`],
+    text:`**${b.name}** (${b.thr.name.toLowerCase()}) follows a healthy day–night cycle: oxygen peaked at **${fmt(mx.v,2)} mg/L at ${hhmm(S.times[mx.i])}** when algae were producing it, and bottomed at **${fmt(mi.v,2)} mg/L at ${hhmm(S.times[mi.i])}**. The warning level for this species is ${b.thr.do.warn} mg/L, so ${mi.v<b.thr.do.warn?'last night it went below it.':'it stayed safe all night.'}\n\nNow: ${fmt(b.live.do,2)} mg/L, ${Math.round(satPct(b))}% of saturation at ${fmt(b.live.temp,1)} °C.`,
+    chart:{b:b.id,m:'do'}, sources:[SRC.fao, b.species==='carp'?SRC.carp:SRC.tilapia], followups:['What is my risk today?','What if I add 500 fish to '+b.name+'?']}; }
+function sensorAns(){ return {steps:['get_sensor_health(basin_4)','get_readings(basin_4, temperature, 6h)','compare_basins(temperature, 6h)'],
+  text:`**Probably a sensor problem, not the water.** The Basin 4 temperature probe has read **exactly 26.0 °C for 3 h 15 min**. In the same time the other basins moved by 1–2 °C, and real water never stays that flat.\n\nOxygen and pH in Basin 4 still look normal, so the fish are not at risk right now. But without a working probe, the alert engine can't catch a heat problem in that basin.\n\nThis goes to the technician, not the worker on shift.`,
+  sources:['FishFarm sensor-health check (rolling statistics)'], action:{label:'Check and recalibrate the Basin 4 temperature probe (S-10)', who:'Samir Touati', due:'Today'},
+  followups:['Which sensors need calibration?','Summarize open alerts']}; }
+function calibAns(){ const bad=S.sensors.filter(x=>x.status!=='OK');
+  return {steps:['get_sensor_health(all)'], text:`Two of your 12 probes need attention:\n\n${bad.map(x=>`- **${x.id}**, ${B(x.basin).name} ${METRIC[x.metric].label.toLowerCase()}: ${x.status.toLowerCase()}. ${x.note}.`).join('\n')}\n\nThe other ${12-bad.length} read normally. Last calibrations were between 12 Oct and 9 Nov.`, sources:['FishFarm sensor-health check (rolling statistics)'], followups:['Is the Basin 4 alert a sensor problem?']}; }
+function revenueAns(){ const rows=S.basins.map(b=>{const c=b.feed+b.maint+b.ops; return {b, c, p:b.revenue-c, m:(b.revenue-c)/b.revenue, fs:b.feed/c, ppf:(b.revenue-c)/b.fish};}).sort((a,b)=>a.m-b.m);
+  const low=rows[0], best=rows[rows.length-1], feedTot=S.basins.reduce((s,b)=>s+b.feed,0), costTot=S.basins.reduce((s,b)=>s+b.feed+b.maint+b.ops,0);
+  return {steps:['get_financials(all, quarter)','compare_basins(margin, quarter)'],
+    text:`Your farm made **${eur(rows.reduce((s,r)=>s+r.p,0))}** profit this quarter. Feed is **${Math.round(100*feedTot/costTot)}%** of all costs, so feed is where small changes matter most.\n\n1. **${low.b.name}** has the lowest margin (${Math.round(low.m*100)}%, ${eur(low.ppf)} per fish). Weigh a sample of fish and check how much feed turns into growth (FCR) before buying more feed.\n2. **${best.b.name}** earns the most per fish (${eur(best.ppf)}). If its oxygen stays safe, it is the best basin to grow.\n3. Skip the evening meal on nights the model predicts low oxygen. Fish eat less then, so the feed is mostly wasted.\n4. Fix the Basin 4 probe quickly: a missed heat problem would cost more than the repair.`,
+    compare:rows.map(r=>({name:r.b.name, v:r.m})), sources:['FishFarm financial data (this quarter)', SRC.srac], followups:['What if I add 500 fish to '+best.b.name+'?','What is my risk today?']}; }
+function riskAns(){ return {steps:['get_oxygen_prediction(all)','get_alerts(open)'],
+  text:`**Medium overall.** One basin is high risk tonight, the others are low. These are model estimates, not certainties.`,
+  risk:S.basins.map(b=>({name:b.name, sp:b.thr.name, p:b.risk, why: b.id==='b3'?'Oxygen fell fast last evening and trout need more of it':b.id==='b2'?'pH swings show a strong algae bloom':b.id==='b4'?'Water fine; temperature probe not working':'Stable readings all week'})),
+  sources:['FishFarm oxygen model v1.3 (scikit-learn)', SRC.fao], followups:['Why did oxygen drop in Basin 3 last night?','How can I raise revenue?']}; }
+function alertsAns(){ const open=relevantAlerts();
+  if(!open.length) return {steps:['get_alerts(open)'], text:'No open alerts right now. The alert engine is still checking every basin every few seconds.', followups:chipsFor()};
+  return {steps:['get_alerts(open)'], text:`You have **${open.length} open alert${open.length>1?'s':''}**:\n\n${open.slice(0,6).map(a=>`- **${B(a.basin).name}** · ${a.title} (${a.severity}, ${a.kind==='sensor'?'hardware':'water'}, ${hhmm(a.time)})`).join('\n')}\n\nStart with the highest severity. Hardware alerts go to the technician.`, followups:['Why did oxygen drop in Basin 3 last night?','Is the Basin 4 alert a sensor problem?']}; }
+function todayAns(){ const b3=B('b3');
+  return {steps:['get_farm_briefing(today)','get_alerts(open)','get_oxygen_prediction(all)'],
+    text:`Three things need you today:\n\n1. **Basin 3 oxygen.** It reached ${fmt(b3min.v,2)} mg/L overnight, under the trout warning level, and the model gives a ${Math.round(b3.risk*100)}% chance it happens again before dawn. Cut the evening feed and aerate from 22:00.\n2. **Basin 4 temperature probe.** It is stuck at 26.0 °C. Ask the technician to check it.\n3. **Basin 2 pH.** It peaked at ${fmt(b2max.v,2)} yesterday afternoon. Check it again at 15:00.\n\nBasin 1 is fine.`,
+    sources:[SRC.fao, SRC.tilapia], action:{label:'Run the Basin 3 aerator 22:00–07:00 tonight', who:'Inès Haddad', due:'Tonight'}, followups:['Why did oxygen drop in Basin 3 last night?','Is the Basin 4 alert a sensor problem?']}; }
+function genericAlertAns(a){ const b=B(a.basin);
+  return {steps:[`get_alerts(${b.id.replace('b','basin_')})`,`get_readings(${b.id.replace('b','basin_')}, ${a.metric}, 24h)`],
+    text: a.metric==='ph' ? `**${b.name}** pH reached **${fmt(a.value,2)}**, above the ${b.thr.ph.max} limit for ${b.thr.name.toLowerCase()}. pH rises in the afternoon when algae use up carbon dioxide, so a high afternoon pH usually means a strong algae bloom.\n\nHigh pH also makes ammonia more toxic: at 24 °C, the toxic share of ammonia is about 7 times higher at pH 9 than at pH 8.\n\n1. Test ammonia today.\n2. Avoid adding lime or fertilizer.\n3. Re-check pH at 15:00 tomorrow.` :
+      `**${b.name}**: ${esc(a.text)}\n\nOne low reading can be noise. If the next readings stay low, aerate and hold back feed until oxygen recovers.`,
+    chart:{b:b.id, m:a.metric}, sources:[SRC.ifas, SRC.fao], followups:['What is my risk today?','Summarize open alerts']}; }
+function whatIfAns(bid, add){ const b=B(bid)||B('b1'); add=add||500; const c=b.feed+b.maint+b.ops; const rpf=b.revenue/b.fish, fpf=b.feed/b.fish;
+  const nr=b.revenue+add*rpf, nf=b.feed+add*fpf, np=nr-nf-b.maint-b.ops, dens=(b.fish+add)/b.capacity;
+  return {steps:[`simulate_scenario(${b.id.replace('b','basin_')}, fish +${add})`,`get_basin_status(${b.id.replace('b','basin_')})`],
+    text:`If you add **${add} fish** to **${b.name}** (estimate, same growth and price as now):\n\n- Revenue: ${eur(b.revenue)} → **${eur(nr)}**\n- Feed cost: ${eur(b.feed)} → **${eur(nf)}**\n- Profit: ${eur(b.revenue-c)} → **${eur(np)}** (${np>=b.revenue-c?'+':''}${eur(np-(b.revenue-c))})\n- Density: ${(b.fish/b.capacity).toFixed(1)} → **${dens.toFixed(1)} fish per m³**\n\n${b.id==='b3'?'**Not advised right now.** More fish use more oxygen, and this basin already dropped below the trout warning level last night. Fix the night oxygen first.':'More fish also means more oxygen demand at night. Watch the pre-dawn low for a week after stocking.'}`,
+    compare:[{name:'Profit now', v:(b.revenue-c)/nr, raw:eur(b.revenue-c)},{name:'Profit after', v:np/nr, raw:eur(np)}], sources:['FishFarm what-if simulator (deterministic)', SRC.srac], followups:['What is my risk today?','How can I raise revenue?']}; }
+
+const wait = ms => new Promise(r=>setTimeout(r, reduce?0:ms));
+async function ask(q){
+  if (busy || !q || !q.trim()) return; busy=true;
+  q=q.trim().slice(0,2000);
+  const empty=aiBody.querySelector('.ai-empty'); if(empty) empty.remove();
+  aiBody.insertAdjacentHTML('beforeend', `<div class="msg-user">${esc(q)}</div>`);
+  const a=answer(q);
+  const box=document.createElement('div'); box.className='msg-ai'; aiBody.appendChild(box);
+  const scroll=()=>aiBody.scrollTop=aiBody.scrollHeight; scroll();
+  if (a.steps.length){ const st=document.createElement('div'); st.className='steps'; box.appendChild(st);
+    for (const s of a.steps){ const c=document.createElement('span'); c.className='stepchip'; c.innerHTML=`<span class="spin"></span>${esc(s)}`; st.appendChild(c); scroll(); await wait(420); c.innerHTML=`<span class="ok">✓</span>${esc(s)}`; } }
+  const tx=document.createElement('div'); box.appendChild(tx);
+  const words=a.text.split(/(\s+)/); let acc='';
+  for (let i=0;i<words.length;i++){ acc+=words[i]; if(i%3===0){ tx.innerHTML=md(acc); scroll(); await wait(18); } }
+  tx.innerHTML=md(a.text);
+  if (a.chart){ const b=B(a.chart.b); box.insertAdjacentHTML('beforeend', `<div class="chart">${basinChart(b,a.chart.m,190)}</div>`); }
+  if (a.risk) box.insertAdjacentHTML('beforeend', `<div class="risk-cards">${a.risk.map(r=>`<div><b>${r.name} <span class="mini">${r.sp}</span></b><span class="badge ${r.p>.5?'b-critical':r.p>.2?'b-warning':'b-healthy'}">${r.p>.5?'High':r.p>.2?'Medium':'Low'} · ${Math.round(r.p*100)}%</span><span class="mini" style="grid-column:1/-1">${esc(r.why)}</span><div class="risk-meter"><i style="width:${Math.round(r.p*100)}%;background:${r.p>.5?'var(--crit)':r.p>.2?'var(--warn)':'var(--ok)'}"></i></div></div>`).join('')}</div>`);
+  if (a.compare) box.insertAdjacentHTML('beforeend', `<div class="cmp">${a.compare.map(c=>`<div><span>${esc(c.name)}</span><i style="width:${clamp(Math.round(c.v*100),2,100)}%"></i><span class="mono">${c.raw||Math.round(c.v*100)+'%'}</span></div>`).join('')}</div>`);
+  if (a.sources) box.insertAdjacentHTML('beforeend', `<div class="srcs">${a.sources.map(s=>`<span class="src">${esc(s)}</span>`).join('')}</div>`);
+  if (a.steps.length) box.insertAdjacentHTML('beforeend', `<details class="data-used"><summary>Data used · ${a.steps.length} tool call${a.steps.length>1?'s':''}</summary><pre>${esc(a.steps.join('\n'))}\nowner scope: set by the server from your login</pre></details>`);
+  if (a.action) box.insertAdjacentHTML('beforeend', `<div class="approve"><span class="mini">Suggested task: <b>${esc(a.action.label)}</b> · assign to ${esc(a.action.who)} · ${esc(a.action.due)}</span><div class="row" style="justify-content:flex-start"><button class="small-btn primary" type="button" data-ai="approve">Approve and create task</button><button class="small-btn" type="button" data-ai="cancel">Not now</button></div></div>`);
+  if (a.action) box.lastElementChild._action=a.action;
+  if (!a.refusal) box.insertAdjacentHTML('beforeend', `<div class="fb">Was this useful?<button type="button" data-ai="fb" aria-pressed="false" aria-label="Useful">👍</button><button type="button" data-ai="fb" aria-pressed="false" aria-label="Not useful">👎</button></div>`);
+  if (a.followups) box.insertAdjacentHTML('beforeend', `<div class="chips">${a.followups.map(f=>`<button class="chip" type="button" data-q="${esc(f)}">${esc(f)}</button>`).join('')}</div>`);
+  scroll(); busy=false;
+}
+aiBody.addEventListener('click', e => {
+  const chip=e.target.closest('[data-q]'); if (chip){ ask(chip.dataset.q); return; }
+  const btn=e.target.closest('[data-ai]'); if(!btn) return;
+  const kind=btn.dataset.ai;
+  if (kind==='approve'){ const card=btn.closest('.approve'), act=card._action; S.tasks.unshift({title:act.label, who:act.who, due:act.due, status:'pending'}); card.classList.add('done'); card.innerHTML=`<span class="mini">✓ Task created and assigned to <b>${esc(act.who)}</b>. You'll find it under Maintenance.</span>`; toast('<b>Task created</b> · '+esc(act.label)); }
+  if (kind==='cancel'){ const card=btn.closest('.approve'); card.innerHTML='<span class="mini">No task created.</span>'; }
+  if (kind==='fb'){ const wrap=btn.parentElement; $$('button',wrap).forEach(b=>b.setAttribute('aria-pressed','false')); btn.setAttribute('aria-pressed','true'); toast('<b>Thanks</b> · feedback saved for the AI Ops review'); }
+});
+$('#aiForm').addEventListener('submit', e => { e.preventDefault(); const i=$('#aiText'); const q=i.value; i.value=''; ask(q); });
+$('#aiClose').addEventListener('click', closeAI);
+$('#aiNew').addEventListener('click', () => { if(!busy) resetAI(); });
+
+/* ================= SIGN-IN PAGES ================= */
+let authSub = 'signin';
+const COUNTRIES = ['France','Algeria','Morocco','Tunisia','Spain','Italy','Norway','Other'];
+function pwField(id, label, extra=''){ return `<label class="field" for="${id}">${label}<span class="pw"><input id="${id}" name="pass" type="password" required ${extra} autocomplete="current-password"><button type="button" data-pw="${id}">Show</button></span><span class="err"></span></label>`; }
+function renderAuth(mode){
+  const c=$('#authCard');
+  if (mode==='team'){
+    $('#authQuote').innerHTML = 'Your shift starts with the water, <em>not a guess.</em>';
+    c.innerHTML = `<span class="pill"><i></i>Workers and technicians</span><h1>Team sign in</h1><p class="lead">Use the account your farm owner created for you. You'll see the pages they gave you access to.</p>
+      <form class="stack" data-auth="team" novalidate>
+        <label class="field" for="tEmail">Work email<input id="tEmail" name="email" type="email" required autocomplete="username"><span class="err"></span></label>
+        ${pwField('tPass','Password')}
+        <div class="form-err" id="tErr" hidden></div>
+        <button class="btn wide" type="submit">Sign in</button></form>
+      <div class="demo-acc"><span>Try a demo account (password <code>demo1234</code>)</span><div class="row" style="justify-content:flex-start"><button class="small-btn" type="button" data-fill="karim@lacvert.farm">Worker · Karim</button><button class="small-btn" type="button" data-fill="samir@lacvert.farm">Technician · Samir</button></div></div>
+      <p class="auth-switch">Farm owner? <a href="#owner-auth">Sign in or create your farm</a></p>`;
+    return;
+  }
+  $('#authQuote').innerHTML = 'The oxygen dip came at 4 a.m. The night worker knew <em>before the fish did.</em>';
+  const reg = authSub==='register';
+  c.innerHTML = `<span class="pill"><i></i>Farm owners</span><h1>${reg?'Create your farm':'Welcome back'}</h1><p class="lead">${reg?'Set up your farm in a minute. You add your workers and technicians afterwards.':'Sign in to see every basin, alert and report on your farm.'}</p>
+    <div class="seg" role="tablist"><button type="button" role="tab" aria-selected="${!reg}" data-sub="signin">Sign in</button><button type="button" role="tab" aria-selected="${reg}" data-sub="register">Create farm</button></div>
+    ${reg?`<form class="stack" data-auth="register" novalidate>
+      <label class="field" for="rName">Your name<input id="rName" name="name" required autocomplete="name"><span class="err"></span></label>
+      <label class="field" for="rEmail">Email<input id="rEmail" name="email" type="email" required autocomplete="email"><span class="err"></span></label>
+      ${pwField('rPass','Password <span class="mini">(at least 8 characters)</span>','data-min="8" autocomplete="new-password"')}
+      <label class="field" for="rFarm">Farm name<input id="rFarm" name="farm" required placeholder="Lac Vert"><span class="err"></span></label>
+      <div class="two"><label class="field" for="rCo">Company name<input id="rCo" name="company" required><span class="err"></span></label>
+      <label class="field" for="rCountry">Country<select id="rCountry" name="country">${COUNTRIES.map(x=>`<option>${x}</option>`).join('')}</select></label></div>
+      <div class="form-err" id="rErr" hidden></div>
+      <button class="btn wide" type="submit">Create farm</button>
+      <p class="mini">Your farm starts with 4 demo basins and a demo team so you can explore right away.</p></form>`
+    :`<form class="stack" data-auth="owner" novalidate>
+      <label class="field" for="oEmail">Email<input id="oEmail" name="email" type="email" required autocomplete="username"><span class="err"></span></label>
+      ${pwField('oPass','Password')}
+      <div class="form-err" id="oErr" hidden></div>
+      <button class="btn wide" type="submit">Sign in</button></form>
+      <div class="demo-acc"><span>Demo owner account: <code>nadia@lacvert.farm</code> / <code>demo1234</code></span><div class="row" style="justify-content:flex-start"><button class="small-btn" type="button" data-fill="nadia@lacvert.farm">Fill demo account</button></div></div>`}
+    <p class="auth-switch">Work on a farm? <a href="#worker-auth">Team sign in</a></p>`;
+}
+function showErr(id, html){ const e=$('#'+id); e.innerHTML=html; e.hidden=false; }
+$('#authCard').addEventListener('click', e => {
+  const s=e.target.closest('[data-sub]'); if (s){ authSub=s.dataset.sub; renderAuth('owner'); const f=$('#authCard input'); f&&f.focus(); return; }
+  const fill=e.target.closest('[data-fill]'); if (fill){ const f=$('#authCard form'); f.email.value=fill.dataset.fill; f.pass.value='demo1234'; $$('.field.invalid',f).forEach(l=>{l.classList.remove('invalid'); const er=l.querySelector('.err'); if(er) er.textContent='';}); f.querySelector('button[type="submit"]').focus(); return; }
+  const pw=e.target.closest('[data-pw]'); if (pw){ const i=$('#'+pw.dataset.pw); const show=i.type==='password'; i.type=show?'text':'password'; pw.textContent=show?'Hide':'Show'; }
+});
+$('#authCard').addEventListener('submit', e => {
+  const f=e.target.closest('form[data-auth]'); if(!f) return; e.preventDefault();
+  if (!validForm(f)) return;
+  const kind=f.dataset.auth, d=new FormData(f), email=String(d.get('email')).trim().toLowerCase(), pass=String(d.get('pass'));
+  if (kind==='register'){
+    if (S.accounts.some(a=>a.email===email)) return showErr('rErr','This email already has an account. <a href="#owner-auth" data-sub="signin">Sign in instead</a>.');
+    const acc={name:String(d.get('name')).trim(), email, pass, role:'owner'}; S.accounts.push(acc);
+    S.farm={name:String(d.get('farm')).trim(), company:String(d.get('company')).trim(), country:d.get('country')};
+    toast(`<b>Farm created</b> · welcome to ${esc(S.farm.name)}`); return signIn(acc);
+  }
+  const acc=S.accounts.find(a=>a.email===email && a.pass===pass);
+  const errId = kind==='team'?'tErr':'oErr';
+  if (!acc) return showErr(errId, 'Wrong email or password. Check both, or use a demo account below.');
+  if (kind==='owner' && acc.role!=='owner') return showErr(errId, `This is a ${acc.role} account. Use <a href="#worker-auth">team sign in</a>.`);
+  if (kind==='team' && acc.role==='owner') return showErr(errId, 'This is an owner account. Use <a href="#owner-auth">owner sign in</a>.');
+  signIn(acc);
+});
+function signIn(acc){
+  S.session={name:acc.name, email:acc.email, role:acc.role};
+  S.view = acc.role==='owner' ? 'overview' : acc.role==='worker' ? 'ops' : 'bench';
+  resetAI();
+  location.hash = acc.role;
+}
+
+/* ================= ROUTING ================= */
+// #owner-auth · #worker-auth · #owner · #worker · #technician · #demo · anything else = website
+let lenis=null, pendingAsk=null, introDone=false;
+function setMode(m){ htmlCls.toggle('in-auth', m==='auth'); htmlCls.toggle('in-app', m==='app'); if (m!=='app') { closeAI(); closeSheet(); closeModal(); }
+  if (lenis){ m==='site' && introDone ? lenis.start() : lenis.stop(); } }
+function route(){
+  const h=location.hash.slice(1);
+  if (h==='owner-auth' || h==='worker-auth'){ setMode('auth'); if (h==='worker-auth') renderAuth('team'); else renderAuth('owner'); const f=$('#authCard input'); setTimeout(()=>f&&f.focus({preventScroll:true}),50); return; }
+  if (h==='demo'){ signIn(S.accounts[0]); return; }
+  if (h==='owner' || h==='worker' || h==='technician'){
+    if (!S.session || S.session.role!==h){ toast('<b>Sign in</b> to open this page'); location.replace('#'+(h==='owner'?'owner-auth':'worker-auth')); return; }
+    setMode('app'); $('#content').scrollTop=0; render(true); updateLive();
+    if (pendingAsk){ const q=pendingAsk; pendingAsk=null; setTimeout(()=>{ openAI(); ask(q); }, 450); }
+    return;
+  }
+  setMode('site');
+}
+window.addEventListener('hashchange', route);
+document.addEventListener('click', e => {
+  const d=e.target.closest('[data-demo]'); if (d){ e.preventDefault(); if (d.dataset.ask) pendingAsk=d.dataset.ask; signIn(S.accounts[0]); return; }
+  const reg=e.target.closest('[data-register]'); if (reg){ authSub='register'; }
+  const si=e.target.closest('a[href="#owner-auth"]:not([data-register])'); if (si && !si.closest('#authCard [data-sub]')) authSub = si.dataset.sub || 'signin';
+});
+
+/* ================= LANDING PAGE MOTION ================= */
+// split words
+function splitEl(el){ Array.from(el.childNodes).forEach(n => {
+  if (n.nodeType===3){ const parts=n.textContent.split(/(\s+)/); const frag=document.createDocumentFragment();
+    parts.forEach(p=>{ if(!p) return; if(/^\s+$/.test(p)) frag.appendChild(document.createTextNode(p)); else { const s=document.createElement('span'); s.className='w'; s.textContent=p; frag.appendChild(s);} }); n.replaceWith(frag); }
+  else if (n.nodeType===1 && n.tagName!=='BR') splitEl(n); }); }
+$$('.split').forEach(splitEl);
+// faint grid squares
+$$('.sq-field').forEach(f => { f.style.cssText='position:absolute;inset:0 0 auto 0;height:42%;z-index:1;pointer-events:none;-webkit-mask-image:linear-gradient(#000,transparent);mask-image:linear-gradient(#000,transparent)';
+  for (let i=0;i<+f.dataset.count;i++){ const q=document.createElement('div'); q.className='grid-sq'; const col=Math.floor(Math.random()*30), row=Math.floor(Math.random()*6);
+    q.style.cssText=`left:${col*48-10}px;top:${row*48+6}px;width:46px;height:46px;opacity:${hasGsap?0:.6}`; f.appendChild(q);
+    if (hasGsap && !reduce) gsap.to(q,{opacity:1,duration:1.2,yoyo:true,repeat:-1,delay:rand(0,4),repeatDelay:rand(0,3)}); } });
+// hero glass squares
+const isMobile = innerWidth<=760;
+[[3,62],[3,69],[6.5,69],[10,69],[3,76],[-1,68],[45.5,74],[49,78],[49,74],[52.5,74],[86,56],[86,65],[82,74],[89.5,74],[86,82]].forEach(([x,y],i) => {
+  const g=document.createElement('div'); g.className='glass'; const center=x>40&&x<60; const sz=center?'clamp(26px,3.2vw,42px)':'clamp(34px,5vw,70px)';
+  g.style.cssText=`left:${x}%;top:${y}%;width:${sz};aspect-ratio:1`; if (isMobile && i%2) g.style.display='none'; $('#heroGlass').appendChild(g);
+  if (hasGsap && !reduce) gsap.to(g,{opacity:.15,duration:.9,yoyo:true,repeat:-1,ease:'sine.inOut',delay:rand(0,3),repeatDelay:rand(1,4)}); });
+
+function setCounters(p){ $$('.card b').forEach(b => { const to=+b.dataset.to, dec=+b.dataset.dec, suf=b.dataset.suf; const v=(to*p);
+  b.innerHTML = (dec? v.toFixed(dec) : Math.round(v).toLocaleString('en-US')) + (suf.trim()==='min'?'<sup>min</sup>':suf); }); }
+
+function finishWithoutMotion(){
+  introDone=true; document.body.classList.remove('intro'); const bd=$('.backdrop'); bd&&bd.remove(); setCounters(1); statsState.level=.62;
+}
+
+if (!hasGsap){ finishWithoutMotion(); route(); }
+else {
+  gsap.registerPlugin(ScrollTrigger);
+  if (typeof window.Lenis!=='undefined' && !reduce){
+    lenis = new Lenis({duration:1.25, easing:t=>Math.min(1,1.001-Math.pow(2,-10*t)), smoothWheel:true});
+    lenis.on('scroll', ScrollTrigger.update); gsap.ticker.add(t=>lenis.raf(t*1000)); gsap.ticker.lagSmoothing(0);
+  }
+  $$('a[href^="#"]:not([data-demo]):not([data-home])').forEach(a => a.addEventListener('click', e => { const id=a.getAttribute('href'); if (id.length<2 || !$(id)) return; e.preventDefault(); lenis ? lenis.scrollTo(id,{duration:1.6}) : $(id).scrollIntoView({behavior:reduce?'auto':'smooth'}); }));
+  setCounters(0); statsState.level=0;
+  if (reduce){ finishWithoutMotion(); setupScroll(); route(); }
+  else {
+    lenis&&lenis.stop();
+    const words=$$('#heroTitle .w');
+    gsap.set(words,{opacity:0,y:24,filter:'blur(10px)'}); gsap.set('.nav',{opacity:0,y:-16}); gsap.set('.reveal-hero',{opacity:0,y:14});
+    gsap.timeline({delay:.25, onComplete(){ document.body.classList.remove('intro'); gsap.set('#site',{clearProps:'all'}); const bd=$('.backdrop'); bd&&bd.remove(); introDone=true; setupScroll(); route(); }})
+      .fromTo('#site',{scale:.9,borderRadius:28},{scale:1,borderRadius:0,duration:1.4,ease:'expo.inOut'})
+      .to('.nav',{opacity:1,y:0,duration:.8,ease:'power3.out'},'-=.5')
+      .to(words,{opacity:1,y:0,filter:'blur(0px)',duration:1,stagger:.07,ease:'power3.out'},'-=.7')
+      .to('.reveal-hero',{opacity:1,y:0,duration:.8,stagger:.1,ease:'power3.out'},'-=.6')
+      .from('.mist-l',{x:-120,opacity:0,duration:1.6,ease:'power3.out'},.4)
+      .from('.mist-r',{x:120,opacity:0,duration:1.6,ease:'power3.out'},.4)
+      .from('#heroGlass .glass, .reading',{opacity:0,scale:.6,duration:.6,stagger:{each:.05,from:'random'},ease:'back.out(2)'},'-=1');
+    if (/^#(owner|worker|technician|owner-auth|worker-auth|demo)$/.test(location.hash)) route();
+  }
+}
+
+function setupScroll(){
+  gsap.timeline({scrollTrigger:{trigger:'#hero',start:'top top',end:'bottom top',scrub:true}})
+    .to('#heroCopy',{yPercent:-50},0)
+    .to('.hero-media',{yPercent:8},0);
+  $$('.hero [data-par]').forEach(el => gsap.to(el,{y:+el.dataset.par*2,ease:'none',scrollTrigger:{trigger:'#hero',start:'top top',end:'bottom top',scrub:true}}));
+  $$('.reveal').forEach(el => gsap.from(el,{opacity:0,y:16,duration:.8,ease:'power3.out',scrollTrigger:{trigger:el,start:'top 88%'}}));
+  $$('.stats .split, .loop .split, .assist .split, .cta .split').forEach(el => gsap.from($$('.w',el),{opacity:0,y:22,filter:'blur(8px)',duration:.9,stagger:.06,ease:'power3.out',scrollTrigger:{trigger:el,start:'top 82%'}}));
+  const mm = gsap.matchMedia();
+  mm.add('(min-width:901px)', () => {
+    gsap.from('.card',{y:40,opacity:0,stagger:.08,duration:.9,ease:'power3.out',scrollTrigger:{trigger:'.cards',start:'top 75%'}});
+    const proxy={p:0};
+    gsap.timeline({scrollTrigger:{trigger:'#stats',start:'top top',end:'+=120%',pin:true,scrub:1}})
+      .to(proxy,{p:1,ease:'none',onUpdate(){ setCounters(proxy.p); statsState.level=proxy.p; }});
+    return () => { setCounters(1); statsState.level=.62; };
+  });
+  mm.add('(max-width:900px)', () => {
+    gsap.from('.card',{y:30,opacity:0,stagger:.08,duration:.8,scrollTrigger:{trigger:'.cards',start:'top 85%'}});
+    const proxy={p:0};
+    gsap.to(proxy,{p:1,duration:2,ease:'power2.out',onUpdate(){ setCounters(proxy.p); },scrollTrigger:{trigger:'.cards',start:'top 80%'}});
+    gsap.to(statsState,{level:.62,ease:'none',scrollTrigger:{trigger:'#stats',start:'top bottom',end:'bottom bottom',scrub:true}});
+  });
+  mm.add('(min-width:761px)', () => {
+    const panels=$$('.panel');
+    const act = p => panels.forEach(x=>x.classList.toggle('is-active', x===p));
+    const fns = panels.map(p => { const f=()=>act(p); ['mouseenter','focus','click'].forEach(ev=>p.addEventListener(ev,f)); return f; });
+    gsap.from('.panel-in',{y:120,opacity:0,duration:1.1,stagger:.12,ease:'power3.out',scrollTrigger:{trigger:'#loop',start:'top 60%'}});
+    return () => panels.forEach((p,i)=>['mouseenter','focus','click'].forEach(ev=>p.removeEventListener(ev,fns[i])));
+  });
+  mm.add('(max-width:760px)', () => {
+    $$('.panel').forEach(p => gsap.from(p.children,{y:40,opacity:0,duration:.9,stagger:.1,scrollTrigger:{trigger:p,start:'top 85%'}}));
+  });
+  gsap.fromTo('#nightCanvas',{yPercent:-12},{yPercent:0,ease:'none',scrollTrigger:{trigger:'#cta',start:'top bottom',end:'bottom bottom',scrub:true}});
+  gsap.from('#ctaCard',{y:80,scale:.94,opacity:0,filter:'blur(10px)',duration:1.2,ease:'power3.out',scrollTrigger:{trigger:'#cta',start:'top 60%'}});
+  // footer logo: three bubbles bounce, merge into the fish, ring draws
+  gsap.set('#fRing',{attr:{'stroke-dashoffset':233}}); gsap.set('#fMark',{attr:{'stroke-dashoffset':120}});
+  const dots=$$('.fdot');
+  dots.forEach((d,i)=>gsap.set(d,{opacity:1,attr:{cx:24+16*i,cy:40,r:4.5}}));
+  gsap.timeline({scrollTrigger:{trigger:'#footer',start:'top 92%'}})
+    .to(dots,{y:-8,duration:.25,stagger:.08,yoyo:true,repeat:3,ease:'sine.inOut'})
+    .to(dots,{attr:{cx:27,cy:38},duration:.45,ease:'power3.inOut'})
+    .to([dots[1],dots[2]],{opacity:0,duration:.1})
+    .to('#fMark',{attr:{'stroke-dashoffset':0},duration:.7,ease:'power3.out'},'-=.05')
+    .to(dots[0],{attr:{r:3.2},duration:.3,ease:'back.out(3)'},'<')
+    .to('#fRing',{attr:{'stroke-dashoffset':0},duration:.9,ease:'power2.inOut'},'-=.3');
+  ScrollTrigger.refresh();
+}
+window.addEventListener('load', () => hasGsap && ScrollTrigger.refresh());
+updateLive();
+})();
+</script>
+</body>
+</html>
