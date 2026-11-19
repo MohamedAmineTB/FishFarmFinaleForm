@@ -33,10 +33,12 @@ def farm_tz(db: Session, owner_id: uuid.UUID) -> ZoneInfo:
 
 
 def when_phrase(iso: str, tz: ZoneInfo, now: datetime) -> str:
-    """'last night' for a time between 20:00 and 08:00 within the last 18 h, else 'at HH:MM' / 'yesterday'."""
+    """'last night' for the previous night (20:00-08:00, within 18 h), 'at HH:MM' today, else 'yesterday' / a date."""
     t = datetime.fromisoformat(iso)
     lt = t.astimezone(tz)
-    if now - t < timedelta(hours=18) and (lt.hour >= 20 or lt.hour < 8):
+    local_now = now.astimezone(tz)
+    this_evening = lt.date() == local_now.date() and lt.hour >= 20 and local_now.hour >= 20
+    if now - t < timedelta(hours=18) and (lt.hour >= 20 or lt.hour < 8) and not this_evening:
         return "last night"
     if lt.date() == now.astimezone(tz).date():
         return f"at {lt:%H:%M}"
