@@ -59,8 +59,9 @@ class Simulator:
                 v = prev + (target - prev) * 0.08 + self.np.normal(0, NOISE_SD[s.metric] * 0.5)
                 self.truth[s.id] = v
                 shown = float(apply_fault(np.array([v]), [now], s.fault)[0])
-                records.append({"sensor_id": s.id, "owner_id": s.owner_id, "metric": s.metric,
-                                "value": round(shown, 3), "recorded_at": now})
+                records.append(
+                    {"sensor_id": s.id, "owner_id": s.owner_id, "metric": s.metric, "value": round(shown, 3), "recorded_at": now}
+                )
 
         by_owner: dict[uuid.UUID, list[SimBasin]] = {}
         for b in basins:

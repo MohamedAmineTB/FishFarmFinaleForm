@@ -55,8 +55,14 @@ def load_ctx(db: Session, user_id: uuid.UUID) -> Ctx | None:
     role = db.get(UserRole, user_id)
     if not user or not role:
         return None
-    return Ctx(user=user, role=role.role, owner_id=role.owner_user_id, permissions=dict(role.permissions or {}),
-               shift_start=role.shift_start, shift_end=role.shift_end)
+    return Ctx(
+        user=user,
+        role=role.role,
+        owner_id=role.owner_user_id,
+        permissions=dict(role.permissions or {}),
+        shift_start=role.shift_start,
+        shift_end=role.shift_end,
+    )
 
 
 def current_ctx(request: Request, db: Session = Depends(get_db)) -> Ctx:

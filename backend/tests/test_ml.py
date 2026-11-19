@@ -60,4 +60,3 @@ def test_prediction_endpoint(client, owner_h):
     assert p["probability"] > 0.5  # Basin 3 dips under 7.0 mg/L most nights
     detail = client.get(f"/api/basins/{b3['id']}", headers=owner_h).json()
     assert detail["prediction"]["model_version"]
-

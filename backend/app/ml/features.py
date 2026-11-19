@@ -15,8 +15,17 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 FEATURES = [
-    "do_now", "do_decline_3h", "do_mean_6h", "do_std_6h", "do_min_24h_gap", "do_gap",
-    "temp_now", "ph_now", "hour_sin", "hour_cos", "feed_kg_per_m3",
+    "do_now",
+    "do_decline_3h",
+    "do_mean_6h",
+    "do_std_6h",
+    "do_min_24h_gap",
+    "do_gap",
+    "temp_now",
+    "ph_now",
+    "hour_sin",
+    "hour_cos",
+    "feed_kg_per_m3",
 ]
 # what the UI shows as "top features" (label, unit, feature column)
 DISPLAY = [

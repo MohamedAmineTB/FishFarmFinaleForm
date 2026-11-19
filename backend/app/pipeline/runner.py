@@ -30,14 +30,25 @@ METRIC_OF = {v: k for k, v in TYPE_OF.items()}
 def load_world(db) -> list[SimBasin]:
     paused = {s.owner_user_id for s in db.scalars(select(SimulatorState).where(SimulatorState.paused.is_(True)))}
     tz = {o.user_id: o.timezone for o in db.scalars(select(Owner))}
-    basins = {b.id: SimBasin(id=b.id, owner_id=b.owner_user_id, profile=b.sim_profile, tz=tz.get(b.owner_user_id,
-              "Europe/Paris")) for b in db.scalars(select(Basin).where(Basin.status != "inactive"))
-              if b.owner_user_id not in paused}
+    basins = {
+        b.id: SimBasin(id=b.id, owner_id=b.owner_user_id, profile=b.sim_profile, tz=tz.get(b.owner_user_id, "Europe/Paris"))
+        for b in db.scalars(select(Basin).where(Basin.status != "inactive"))
+        if b.owner_user_id not in paused
+    }
     for s in db.scalars(select(Sensor).where(Sensor.status == "active")):
         if s.basin_id in basins:
-            basins[s.basin_id].sensors.append(SimSensor(id=s.id, owner_id=s.owner_user_id, basin_id=s.basin_id,
-                                                        metric=METRIC_OF[s.type], min_value=s.min_value,
-                                                        max_value=s.max_value, fault=s.sim_fault, truth=None))
+            basins[s.basin_id].sensors.append(
+                SimSensor(
+                    id=s.id,
+                    owner_id=s.owner_user_id,
+                    basin_id=s.basin_id,
+                    metric=METRIC_OF[s.type],
+                    min_value=s.min_value,
+                    max_value=s.max_value,
+                    fault=s.sim_fault,
+                    truth=None,
+                )
+            )
     return list(basins.values())
 
 
@@ -77,8 +88,9 @@ def main() -> None:
                 n = load(db, df)
                 etl_log.add(len(raw), n, reasons)
                 for sid, fault in new_faults:
-                    db.execute(text("UPDATE sensors SET sim_fault = CAST(:f AS jsonb) WHERE id = :s"),
-                               {"f": json.dumps(fault), "s": sid})
+                    db.execute(
+                        text("UPDATE sensors SET sim_fault = CAST(:f AS jsonb) WHERE id = :s"), {"f": json.dumps(fault), "s": sid}
+                    )
                     log.info("injected probe fault %s on %s", fault["type"], sid)
             if t0 - last["health"] > 60:
                 with session_scope() as db:

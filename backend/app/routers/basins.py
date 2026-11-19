@@ -52,8 +52,9 @@ class BasinIn(BaseModel):
 def add_basin(body: BasinIn, ctx: Ctx = Depends(require_owner), db: Session = Depends(get_db)):
     if body.species not in SPECIES_CODES:
         raise HTTPException(422, "Unknown species.")
-    b = create_basin(db, ctx.owner_id, name=body.name.strip(), species=body.species, capacity=body.capacity,
-                     fish_count=body.fish_count)
+    b = create_basin(
+        db, ctx.owner_id, name=body.name.strip(), species=body.species, capacity=body.capacity, fish_count=body.fish_count
+    )
     if not db.get(SimulatorState, ctx.owner_id):
         db.add(SimulatorState(owner_user_id=ctx.owner_id, paused=False))
     notify(db, {"type": "farm", "owner_id": str(ctx.owner_id), "action": "basin_created", "basin_id": str(b.id)})
@@ -71,19 +72,32 @@ def basin_detail(basin_id: uuid.UUID, ctx: Ctx = Depends(require_perm("basins"))
     low = overnight_low(series_24h(db, sensors["do"])) if "do" in sensors else None
     out["overnight_low"] = low
     out["prediction"] = _prediction_json(pred, b) if pred else None
-    out["probes"] = [{"id": str(s.id), "code": s.code, "metric": m, "label": METRIC_INFO[m]["label"],
-                      "health": s.health, "note": s.health_note}
-                     for m, s in sorted(sensors.items(), key=lambda kv: kv[1].code)]
+    out["probes"] = [
+        {
+            "id": str(s.id),
+            "code": s.code,
+            "metric": m,
+            "label": METRIC_INFO[m]["label"],
+            "health": s.health,
+            "note": s.health_note,
+        }
+        for m, s in sorted(sensors.items(), key=lambda kv: kv[1].code)
+    ]
     out["alerts"] = alerts_for(db, ctx.owner_id, basin_id=b.id, kind=role_alert_kind(ctx.role))[:4]
     return out
 
 
 @router.get("/{basin_id}/readings")
-def readings(basin_id: uuid.UUID, metric: str = Query("do", pattern="^(do|temp|ph)$"),
-             ctx: Ctx = Depends(require_perm("basins")), db: Session = Depends(get_db)):
+def readings(
+    basin_id: uuid.UUID,
+    metric: str = Query("do", pattern="^(do|temp|ph)$"),
+    ctx: Ctx = Depends(require_perm("basins")),
+    db: Session = Depends(get_db),
+):
     b = get_basin(db, ctx, basin_id)
-    sensor = db.scalar(select(Sensor).where(Sensor.basin_id == b.id, Sensor.type == {
-        "do": "oxygen", "temp": "temperature", "ph": "ph"}[metric]))
+    sensor = db.scalar(
+        select(Sensor).where(Sensor.basin_id == b.id, Sensor.type == {"do": "oxygen", "temp": "temperature", "ph": "ph"}[metric])
+    )
     if not sensor:
         raise HTTPException(404, "No probe for this metric.")
     return {"metric": metric, **series_24h(db, sensor, datetime.now(UTC))}
@@ -97,8 +111,7 @@ class FinanceIn(BaseModel):
 
 
 @router.put("/{basin_id}/finances")
-def save_finances(basin_id: uuid.UUID, body: FinanceIn, ctx: Ctx = Depends(require_owner),
-                  db: Session = Depends(get_db)):
+def save_finances(basin_id: uuid.UUID, body: FinanceIn, ctx: Ctx = Depends(require_owner), db: Session = Depends(get_db)):
     b = get_basin(db, ctx, basin_id)
     b.fish_count, b.feeding_cost, b.maintenance_cost, b.operational_cost = body.fish, body.feed, body.maint, body.ops
     notify(db, {"type": "farm", "owner_id": str(ctx.owner_id), "action": "finance", "basin_id": str(b.id)})
@@ -107,9 +120,15 @@ def save_finances(basin_id: uuid.UUID, body: FinanceIn, ctx: Ctx = Depends(requi
 
 
 def _prediction_json(p, b: Basin) -> dict:
-    return {"probability": round(p.probability, 3), "horizon": p.horizon, "features": p.features,
-            "top_features": p.top_features, "model_version": p.model_version, "created_at": p.created_at.isoformat(),
-            "is_estimate": True}
+    return {
+        "probability": round(p.probability, 3),
+        "horizon": p.horizon,
+        "features": p.features,
+        "top_features": p.top_features,
+        "model_version": p.model_version,
+        "created_at": p.created_at.isoformat(),
+        "is_estimate": True,
+    }
 
 
 @router.get("/{basin_id}/prediction")

@@ -77,8 +77,9 @@ def train(db: Session, save: bool = True) -> dict:
         raise RuntimeError("Not enough labelled history to train (load the demo farm first).")
     cut = data.index.min() + (data.index.max() - data.index.min()) * 0.75
     train_df, test_df = data[data.index < cut], data[data.index >= cut]
-    model = RandomForestClassifier(n_estimators=300, max_depth=8, min_samples_leaf=4, class_weight="balanced",
-                                   random_state=0, n_jobs=-1)
+    model = RandomForestClassifier(
+        n_estimators=300, max_depth=8, min_samples_leaf=4, class_weight="balanced", random_state=0, n_jobs=-1
+    )
     model.fit(train_df[FEATURES], train_df["label"].astype(int))
     prob = model.predict_proba(test_df[FEATURES])[:, 1]
     pred = (prob >= 0.5).astype(int)
@@ -87,23 +88,36 @@ def train(db: Session, save: bool = True) -> dict:
     metrics = {
         "model_version": MODEL_VERSION,
         "trained_at": datetime.now(UTC).isoformat(),
-        "samples": {"train": int(len(train_df)), "test": int(len(test_df)),
-                    "positive_rate": round(float(data["label"].mean()), 3)},
+        "samples": {
+            "train": int(len(train_df)),
+            "test": int(len(test_df)),
+            "positive_rate": round(float(data["label"].mean()), 3),
+        },
         "split": f"by time: train before {cut:%Y-%m-%d %H:%M} UTC, test after",
         "model": evaluate(y, pred, prob),
         "baseline_last_24h_dip": evaluate(y, baseline),
-        "feature_importance": {k: round(float(v), 3) for k, v in
-                               sorted(zip(FEATURES, model.feature_importances_, strict=True), key=lambda kv: -kv[1])},
+        "feature_importance": {
+            k: round(float(v), 3)
+            for k, v in sorted(zip(FEATURES, model.feature_importances_, strict=True), key=lambda kv: -kv[1])
+        },
         "per_basin_test_positive_rate": {k: round(float(v), 2) for k, v in test_df.groupby("basin")["label"].mean().items()},
     }
     if save:
         d = model_dir()
         # refit on all data for production use (the metrics above come from the held-out period)
-        final = RandomForestClassifier(n_estimators=300, max_depth=8, min_samples_leaf=4, class_weight="balanced",
-                                       random_state=0, n_jobs=-1)
+        final = RandomForestClassifier(
+            n_estimators=300, max_depth=8, min_samples_leaf=4, class_weight="balanced", random_state=0, n_jobs=-1
+        )
         final.fit(data[FEATURES], data["label"].astype(int))
-        joblib.dump({"model": final, "features": FEATURES, "version": MODEL_VERSION,
-                     "importance": dict(zip(FEATURES, final.feature_importances_, strict=True))}, d / "model.joblib")
+        joblib.dump(
+            {
+                "model": final,
+                "features": FEATURES,
+                "version": MODEL_VERSION,
+                "importance": dict(zip(FEATURES, final.feature_importances_, strict=True)),
+            },
+            d / "model.joblib",
+        )
         (d / "metrics.json").write_text(json.dumps(metrics, indent=2))
     return metrics
 

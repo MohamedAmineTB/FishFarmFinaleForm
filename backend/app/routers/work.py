@@ -20,8 +20,9 @@ STATUS_IN = {"pending": "pending", "in progress": "in_progress", "in_progress": 
 
 
 @router.get("/tasks")
-def list_tasks(scope: str = Query("mine", pattern="^(mine|all)$"), ctx: Ctx = Depends(current_ctx),
-               db: Session = Depends(get_db)):
+def list_tasks(
+    scope: str = Query("mine", pattern="^(mine|all)$"), ctx: Ctx = Depends(current_ctx), db: Session = Depends(get_db)
+):
     if scope == "all":
         if not ctx.can("maintenance"):
             raise HTTPException(403, "You don't have access to maintenance. Ask your farm owner.")
@@ -44,8 +45,16 @@ def update_task(task_id: uuid.UUID, body: TaskStatusIn, ctx: Ctx = Depends(curre
     if not st:
         raise HTTPException(422, "Status must be pending, in progress or fixed.")
     t.status = st
-    notify(db, {"type": "task", "action": "updated", "owner_id": str(ctx.owner_id), "task_id": str(t.id),
-                "assignee_id": str(t.assignee_user_id) if t.assignee_user_id else None})
+    notify(
+        db,
+        {
+            "type": "task",
+            "action": "updated",
+            "owner_id": str(ctx.owner_id),
+            "task_id": str(t.id),
+            "assignee_id": str(t.assignee_user_id) if t.assignee_user_id else None,
+        },
+    )
     db.commit()
     return {"id": str(t.id), "status": t.status}
 
@@ -59,10 +68,13 @@ def sensors(ctx: Ctx = Depends(current_ctx), db: Session = Depends(get_db)):
     rows = db.scalars(select(Sensor).where(Sensor.owner_user_id == ctx.owner_id).order_by(Sensor.code)).all()
     basins = {b.id: b for b in db.scalars(select(Basin).where(Basin.owner_user_id == ctx.owner_id))}
     start = now - timedelta(hours=6)
-    spark = db.execute(text(
-        "SELECT sensor_id, floor(extract(epoch FROM (recorded_at - :a)) / 900)::int AS k, avg(value) "
-        "FROM readings WHERE owner_user_id = :o AND recorded_at > :a GROUP BY 1, 2 ORDER BY 1, 2"),
-        {"o": ctx.owner_id, "a": start}).all()
+    spark = db.execute(
+        text(
+            "SELECT sensor_id, floor(extract(epoch FROM (recorded_at - :a)) / 900)::int AS k, avg(value) "
+            "FROM readings WHERE owner_user_id = :o AND recorded_at > :a GROUP BY 1, 2 ORDER BY 1, 2"
+        ),
+        {"o": ctx.owner_id, "a": start},
+    ).all()
     by: dict = {}
     for sid, _k, v in spark:
         by.setdefault(sid, []).append(round(float(v), 3))
@@ -70,11 +82,22 @@ def sensors(ctx: Ctx = Depends(current_ctx), db: Session = Depends(get_db)):
     for s in rows:
         m = TYPE_TO_METRIC[s.type]
         b = basins.get(s.basin_id)
-        out.append({"id": str(s.id), "code": s.code, "basin": b.name if b else "", "basin_id": str(s.basin_id),
-                    "metric": m, "label": METRIC_INFO[m]["label"], "short": METRIC_INFO[m]["short"],
-                    "health": s.health, "note": s.health_note or "", "spark": by.get(s.id, []),
-                    "calibrated": s.last_calibrated_at.isoformat() if s.last_calibrated_at else None,
-                    "last_value": s.last_value})
+        out.append(
+            {
+                "id": str(s.id),
+                "code": s.code,
+                "basin": b.name if b else "",
+                "basin_id": str(s.basin_id),
+                "metric": m,
+                "label": METRIC_INFO[m]["label"],
+                "short": METRIC_INFO[m]["short"],
+                "health": s.health,
+                "note": s.health_note or "",
+                "spark": by.get(s.id, []),
+                "calibrated": s.last_calibrated_at.isoformat() if s.last_calibrated_at else None,
+                "last_value": s.last_value,
+            }
+        )
     return out
 
 
@@ -86,28 +109,60 @@ class MaintenanceIn(BaseModel):
 
 
 @router.post("/maintenance", status_code=201)
-def log_maintenance(body: MaintenanceIn, ctx: Ctx = Depends(require_perm("maintenance")),
-                    db: Session = Depends(get_db)):
+def log_maintenance(body: MaintenanceIn, ctx: Ctx = Depends(require_perm("maintenance")), db: Session = Depends(get_db)):
     s = db.get(Sensor, body.sensor_id)
     if not s or s.owner_user_id != ctx.owner_id:
         raise HTTPException(404, "Probe not found.")
     b = db.get(Basin, s.basin_id)
     label = f"{s.code} · {b.name} · {METRIC_INFO[TYPE_TO_METRIC[s.type]]['short']}"
     now = datetime.now(UTC)
-    db.add(Maintenance(owner_user_id=ctx.owner_id, technician_user_id=ctx.user.id, sensor_id=s.id,
-                       work_type=body.work_type, description=body.description.strip(), due_date=body.due_date))
-    db.add(Task(owner_user_id=ctx.owner_id, title=f"{body.work_type}: {label}", assignee_user_id=ctx.user.id,
-                basin_id=b.id, sensor_id=s.id, status="pending", source="maintenance", due_date=body.due_date,
-                created_by=ctx.user.id))
-    r = Report(owner_user_id=ctx.owner_id, author_user_id=ctx.user.id, kind="maintenance",
-               title=f"{body.work_type}, {label}", body=body.description.strip(), basin_id=b.id,
-               content={"sensor": s.code, "work_type": body.work_type, "due_date": body.due_date.isoformat()})
+    db.add(
+        Maintenance(
+            owner_user_id=ctx.owner_id,
+            technician_user_id=ctx.user.id,
+            sensor_id=s.id,
+            work_type=body.work_type,
+            description=body.description.strip(),
+            due_date=body.due_date,
+        )
+    )
+    db.add(
+        Task(
+            owner_user_id=ctx.owner_id,
+            title=f"{body.work_type}: {label}",
+            assignee_user_id=ctx.user.id,
+            basin_id=b.id,
+            sensor_id=s.id,
+            status="pending",
+            source="maintenance",
+            due_date=body.due_date,
+            created_by=ctx.user.id,
+        )
+    )
+    r = Report(
+        owner_user_id=ctx.owner_id,
+        author_user_id=ctx.user.id,
+        kind="maintenance",
+        title=f"{body.work_type}, {label}",
+        body=body.description.strip(),
+        basin_id=b.id,
+        content={"sensor": s.code, "work_type": body.work_type, "due_date": body.due_date.isoformat()},
+    )
     db.add(r)
     # the probe has been worked on: clear any simulated fault and record the calibration date
     s.sim_fault, s.last_calibrated_at = None, now
     db.flush()
-    notify(db, {"type": "report", "action": "created", "owner_id": str(ctx.owner_id), "report_id": str(r.id),
-                "title": r.title, "author": ctx.user.name})
+    notify(
+        db,
+        {
+            "type": "report",
+            "action": "created",
+            "owner_id": str(ctx.owner_id),
+            "report_id": str(r.id),
+            "title": r.title,
+            "author": ctx.user.name,
+        },
+    )
     notify(db, {"type": "task", "action": "created", "owner_id": str(ctx.owner_id)})
     db.commit()
     return {"ok": True, "report_id": str(r.id)}

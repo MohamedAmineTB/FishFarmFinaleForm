@@ -32,9 +32,11 @@ def basins_with_sensors(db: Session, owner_id: uuid.UUID) -> list[tuple[Basin, d
 
 
 def latest_predictions(db: Session, owner_id: uuid.UUID) -> dict[uuid.UUID, Prediction]:
-    rows = db.scalars(text(
-        "SELECT DISTINCT ON (basin_id) id FROM predictions WHERE owner_user_id = :o ORDER BY basin_id, created_at DESC"
-    ).bindparams(o=owner_id)).all()
+    rows = db.scalars(
+        text(
+            "SELECT DISTINCT ON (basin_id) id FROM predictions WHERE owner_user_id = :o ORDER BY basin_id, created_at DESC"
+        ).bindparams(o=owner_id)
+    ).all()
     preds = db.scalars(select(Prediction).where(Prediction.id.in_(rows))).all() if rows else []
     return {p.basin_id: p for p in preds}
 
@@ -43,16 +45,23 @@ def live_values(sensors: dict[str, Sensor]) -> dict:
     return {m: (s.last_value if s else None) for m, s in ((m, sensors.get(m)) for m in ("do", "temp", "ph"))}
 
 
-def basin_json(b: Basin, sensors: dict[str, Sensor], th: Thresholds, pred: Prediction | None,
-               with_finance: bool = False) -> dict:
+def basin_json(b: Basin, sensors: dict[str, Sensor], th: Thresholds, pred: Prediction | None, with_finance: bool = False) -> dict:
     live = live_values(sensors)
     sat = do_saturation_pct(live["do"], live["temp"]) if live["do"] is not None and live["temp"] is not None else None
     out = {
-        "id": str(b.id), "name": b.name, "species": b.species, "species_name": SPECIES_NAMES[b.species],
-        "status": b.status, "live": live, "cls": {m: value_class(th, m, live[m]) for m in live},
+        "id": str(b.id),
+        "name": b.name,
+        "species": b.species,
+        "species_name": SPECIES_NAMES[b.species],
+        "status": b.status,
+        "live": live,
+        "cls": {m: value_class(th, m, live[m]) for m in live},
         "sat": round(sat, 1) if sat is not None else None,
-        "capacity": b.capacity, "fish": b.fish_count, "density": round(b.fish_count / b.capacity, 1),
-        "risk": round(pred.probability, 3) if pred else None, "thr": th.as_dict(),
+        "capacity": b.capacity,
+        "fish": b.fish_count,
+        "density": round(b.fish_count / b.capacity, 1),
+        "risk": round(pred.probability, 3) if pred else None,
+        "thr": th.as_dict(),
         "sensors": {m: {"id": str(s.id), "code": s.code, "health": s.health} for m, s in sensors.items()},
     }
     if with_finance:
@@ -62,8 +71,14 @@ def basin_json(b: Basin, sensors: dict[str, Sensor], th: Thresholds, pred: Predi
 
 def finance_json(b: Basin) -> dict:
     costs = b.feeding_cost + b.maintenance_cost + b.operational_cost
-    return {"revenue": b.revenue, "feed": b.feeding_cost, "maint": b.maintenance_cost, "ops": b.operational_cost,
-            "costs": costs, "profit": b.revenue - costs}
+    return {
+        "revenue": b.revenue,
+        "feed": b.feeding_cost,
+        "maint": b.maintenance_cost,
+        "ops": b.operational_cost,
+        "costs": costs,
+        "profit": b.revenue - costs,
+    }
 
 
 def live_basins(db: Session, owner_id: uuid.UUID, with_finance: bool = False) -> list[dict]:
@@ -76,18 +91,35 @@ def alert_json(a: Alert, basins: dict[uuid.UUID, Basin], names: dict[uuid.UUID, 
     b = basins.get(a.basin_id)
     metric = TYPE_TO_METRIC.get(a.metric, a.metric)
     return {
-        "id": str(a.id), "basin_id": str(a.basin_id), "basin": b.name if b else "",
+        "id": str(a.id),
+        "basin_id": str(a.basin_id),
+        "basin": b.name if b else "",
         "species_name": SPECIES_NAMES.get(b.species, "") if b else "",
-        "metric": metric, "metric_label": METRIC_INFO.get(metric, {}).get("label", a.metric),
-        "kind": a.kind, "type": a.type, "title": a.title, "text": a.description, "severity": a.severity,
-        "value": a.value, "time": a.created_at.isoformat(), "resolved": a.is_resolved,
+        "metric": metric,
+        "metric_label": METRIC_INFO.get(metric, {}).get("label", a.metric),
+        "kind": a.kind,
+        "type": a.type,
+        "title": a.title,
+        "text": a.description,
+        "severity": a.severity,
+        "value": a.value,
+        "time": a.created_at.isoformat(),
+        "resolved": a.is_resolved,
         "resolved_at": a.resolved_at.isoformat() if a.resolved_at else None,
-        "by": names.get(a.resolved_by) if a.resolved_by else None, "note": a.resolution_note,
+        "by": names.get(a.resolved_by) if a.resolved_by else None,
+        "note": a.resolution_note,
     }
 
 
-def alerts_for(db: Session, owner_id: uuid.UUID, *, kind: str | None = None, resolved: bool | None = None,
-               basin_id: uuid.UUID | None = None, limit: int = 200) -> list[dict]:
+def alerts_for(
+    db: Session,
+    owner_id: uuid.UUID,
+    *,
+    kind: str | None = None,
+    resolved: bool | None = None,
+    basin_id: uuid.UUID | None = None,
+    limit: int = 200,
+) -> list[dict]:
     q = select(Alert).where(Alert.owner_user_id == owner_id)
     if kind:
         q = q.where(Alert.kind == kind)
@@ -122,10 +154,13 @@ def series_24h(db: Session, sensor: Sensor, now: datetime | None = None, hours: 
     now = now or datetime.now(UTC)
     n = hours * 4 + 1
     start = now - STEP * (n - 1)
-    rows = db.execute(text(
-        "SELECT floor(extract(epoch FROM (recorded_at - :start)) / 900)::int AS k, avg(value) "
-        "FROM readings WHERE sensor_id = :s AND recorded_at > :a AND recorded_at <= :now GROUP BY 1"),
-        {"start": start, "s": sensor.id, "a": start - STEP / 2, "now": now}).all()
+    rows = db.execute(
+        text(
+            "SELECT floor(extract(epoch FROM (recorded_at - :start)) / 900)::int AS k, avg(value) "
+            "FROM readings WHERE sensor_id = :s AND recorded_at > :a AND recorded_at <= :now GROUP BY 1"
+        ),
+        {"start": start, "s": sensor.id, "a": start - STEP / 2, "now": now},
+    ).all()
     by = {int(k): float(v) for k, v in rows}
     values: list[float | None] = []
     last = None

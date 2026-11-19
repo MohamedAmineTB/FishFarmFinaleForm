@@ -2,21 +2,41 @@ from tests.conftest import login
 
 
 def test_register_validates_input(client):
-    r = client.post("/api/auth/register", json={"name": "A", "email": "not-an-email", "password": "short",
-                                                 "farm": "F", "company": "C", "country": "France"})
+    r = client.post(
+        "/api/auth/register",
+        json={"name": "A", "email": "not-an-email", "password": "short", "farm": "F", "company": "C", "country": "France"},
+    )
     assert r.status_code == 422
 
 
 def test_register_duplicate_email(client):
-    r = client.post("/api/auth/register", json={"name": "X", "email": "nadia@lacvert.farm", "password": "longenough1",
-                                                 "farm": "F", "company": "C", "country": "France"})
+    r = client.post(
+        "/api/auth/register",
+        json={
+            "name": "X",
+            "email": "nadia@lacvert.farm",
+            "password": "longenough1",
+            "farm": "F",
+            "company": "C",
+            "country": "France",
+        },
+    )
     assert r.status_code == 409
     assert r.json()["detail"]["code"] == "email_taken"
 
 
 def test_new_owner_gets_empty_farm(client):
-    r = client.post("/api/auth/register", json={"name": "Lina New", "email": "lina@new.farm", "password": "longenough1",
-                                                 "farm": "New Farm", "company": "NewCo", "country": "France"})
+    r = client.post(
+        "/api/auth/register",
+        json={
+            "name": "Lina New",
+            "email": "lina@new.farm",
+            "password": "longenough1",
+            "farm": "New Farm",
+            "company": "NewCo",
+            "country": "France",
+        },
+    )
     assert r.status_code == 200
     h = {"Authorization": f"Bearer {r.json()['access_token']}"}
     me = client.get("/api/me", headers=h).json()

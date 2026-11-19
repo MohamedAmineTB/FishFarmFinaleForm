@@ -10,14 +10,17 @@ def test_owner_b_cannot_see_owner_a(client, owner_h, other_owner_h):
     # direct access to another farm's basin looks like it does not exist
     assert client.get(f"/api/basins/{a_id}", headers=other_owner_h).status_code == 404
     assert client.get(f"/api/basins/{a_id}/readings", headers=other_owner_h).status_code == 404
-    assert client.put(f"/api/basins/{a_id}/finances", headers=other_owner_h,
-                      json={"fish": 1, "feed": 1, "maint": 1, "ops": 1}).status_code == 404
+    assert (
+        client.put(
+            f"/api/basins/{a_id}/finances", headers=other_owner_h, json={"fish": 1, "feed": 1, "maint": 1, "ops": 1}
+        ).status_code
+        == 404
+    )
     # alerts, reports, team are scoped too
     assert all(a["basin"] == "Pond A" for a in client.get("/api/alerts", headers=other_owner_h).json())
     assert client.get("/api/reports", headers=other_owner_h).json() == []
     alert_id = client.get("/api/alerts", headers=owner_h).json()[0]["id"]
-    assert client.post(f"/api/alerts/{alert_id}/resolve", headers=other_owner_h,
-                       json={"note": "x"}).status_code == 404
+    assert client.post(f"/api/alerts/{alert_id}/resolve", headers=other_owner_h, json={"note": "x"}).status_code == 404
 
 
 def test_owner_only_endpoints_reject_team(client, worker_h, tech_h):
@@ -38,8 +41,10 @@ def test_permission_switch_is_enforced(client, owner_h, worker_h):
     client.patch(f"/api/team/{karim['id']}/permissions", headers=owner_h, json={"permissions": {"alerts": True}})
     assert client.get("/api/alerts", headers=worker_h).status_code == 200
     # unknown permission keys are refused
-    assert client.patch(f"/api/team/{karim['id']}/permissions", headers=owner_h,
-                        json={"permissions": {"admin": True}}).status_code == 422
+    assert (
+        client.patch(f"/api/team/{karim['id']}/permissions", headers=owner_h, json={"permissions": {"admin": True}}).status_code
+        == 422
+    )
 
 
 def test_role_scoped_alerts(client, owner_h, worker_h, tech_h):
@@ -50,19 +55,35 @@ def test_role_scoped_alerts(client, owner_h, worker_h, tech_h):
     assert all(a["kind"] == "sensor" for a in hardware)
     assert len(everything) == len(water) + len(hardware)
     # a worker cannot resolve a hardware alert
-    assert client.post(f"/api/alerts/{hardware[0]['id']}/resolve", headers=worker_h,
-                       json={"note": "x"}).status_code == 404
+    assert client.post(f"/api/alerts/{hardware[0]['id']}/resolve", headers=worker_h, json={"note": "x"}).status_code == 404
 
 
 def test_add_member_can_sign_in(client, owner_h):
-    r = client.post("/api/team", headers=owner_h, json={"name": "Yasmine Test", "email": "yasmine@lacvert.farm",
-                                                          "password": "farm-1234", "role": "worker",
-                                                          "shift_start": "06:00", "shift_end": "14:00"})
+    r = client.post(
+        "/api/team",
+        headers=owner_h,
+        json={
+            "name": "Yasmine Test",
+            "email": "yasmine@lacvert.farm",
+            "password": "farm-1234",
+            "role": "worker",
+            "shift_start": "06:00",
+            "shift_end": "14:00",
+        },
+    )
     assert r.status_code == 201, r.text
-    r = client.post("/api/auth/login", json={"email": "yasmine@lacvert.farm", "password": "farm-1234",
-                                             "portal": "team"})
+    r = client.post("/api/auth/login", json={"email": "yasmine@lacvert.farm", "password": "farm-1234", "portal": "team"})
     assert r.status_code == 200 and r.json()["role"] == "worker"
-    dup = client.post("/api/team", headers=owner_h, json={"name": "Again", "email": "yasmine@lacvert.farm",
-                                                            "password": "farm-1234", "role": "worker",
-                                                            "shift_start": "06:00", "shift_end": "14:00"})
+    dup = client.post(
+        "/api/team",
+        headers=owner_h,
+        json={
+            "name": "Again",
+            "email": "yasmine@lacvert.farm",
+            "password": "farm-1234",
+            "role": "worker",
+            "shift_start": "06:00",
+            "shift_end": "14:00",
+        },
+    )
     assert dup.status_code == 409

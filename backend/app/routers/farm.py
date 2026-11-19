@@ -23,10 +23,10 @@ def me(ctx: Ctx = Depends(current_ctx), db: Session = Depends(get_db)):
     s = get_settings()
     return {
         "user": {"id": str(ctx.user.id), "name": ctx.user.name, "email": ctx.user.email},
-        "role": ctx.role, "permissions": ctx.permissions,
+        "role": ctx.role,
+        "permissions": ctx.permissions,
         "shift": {"start": ctx.shift_start, "end": ctx.shift_end} if ctx.shift_start else None,
-        "farm": {"name": farm.farm_name, "company": farm.company_name, "country": farm.country,
-                 "timezone": farm.timezone},
+        "farm": {"name": farm.farm_name, "company": farm.company_name, "country": farm.country, "timezone": farm.timezone},
         "assistant": {"provider": s.effective_llm_provider, "demo_mode": s.effective_llm_provider == "mock"},
     }
 
@@ -45,13 +45,42 @@ def live(ctx: Ctx = Depends(current_ctx), db: Session = Depends(get_db)):
     unread = 0
     if ctx.is_owner:
         total = db.scalar(select(func.count()).select_from(Report).where(Report.owner_user_id == ctx.owner_id))
-        read = db.scalar(select(func.count()).select_from(ReportRead).join(Report, Report.id == ReportRead.report_id)
-                         .where(ReportRead.user_id == ctx.user.id, Report.owner_user_id == ctx.owner_id))
+        read = db.scalar(
+            select(func.count())
+            .select_from(ReportRead)
+            .join(Report, Report.id == ReportRead.report_id)
+            .where(ReportRead.user_id == ctx.user.id, Report.owner_user_id == ctx.owner_id)
+        )
         unread = (total or 0) - (read or 0)
-    return {"basins": [{k: b[k] for k in ("id", "name", "species", "species_name", "status", "live", "cls", "sat",
-                                          "risk", "capacity", "fish", "density", "thr", "sensors")} for b in basins],
-            "alerts": alerts[:5], "open_alerts": len(alerts), "unread_reports": unread,
-            "simulator": {"paused": _sim_paused(db, ctx)}, "server_time": datetime.now(UTC).isoformat()}
+    return {
+        "basins": [
+            {
+                k: b[k]
+                for k in (
+                    "id",
+                    "name",
+                    "species",
+                    "species_name",
+                    "status",
+                    "live",
+                    "cls",
+                    "sat",
+                    "risk",
+                    "capacity",
+                    "fish",
+                    "density",
+                    "thr",
+                    "sensors",
+                )
+            }
+            for b in basins
+        ],
+        "alerts": alerts[:5],
+        "open_alerts": len(alerts),
+        "unread_reports": unread,
+        "simulator": {"paused": _sim_paused(db, ctx)},
+        "server_time": datetime.now(UTC).isoformat(),
+    }
 
 
 @router.get("/overview")
@@ -66,13 +95,25 @@ def overview(ctx: Ctx = Depends(require_owner), db: Session = Depends(get_db)):
     summary = br.owner_summary(db, ctx.owner_id, now) if basins else {"text": "", "actions": []}
     return {
         "basins": basins,
-        "alerts": {"open": len(alerts), "sensor": sum(a["kind"] == "sensor" for a in alerts),
-                   "water": sum(a["kind"] == "water" for a in alerts)},
-        "finance": {"revenue": rev, "costs": costs, "profit": rev - costs,
-                    "margin": (rev - costs) / rev if rev else 0, "feed_share": feed / costs if costs else 0},
-        "team": {"total": len(people), "workers": sum(p["role"] == "worker" for p in people),
-                 "technicians": sum(p["role"] == "technician" for p in people)},
-        "summary": summary["text"], "actions": summary["actions"],
+        "alerts": {
+            "open": len(alerts),
+            "sensor": sum(a["kind"] == "sensor" for a in alerts),
+            "water": sum(a["kind"] == "water" for a in alerts),
+        },
+        "finance": {
+            "revenue": rev,
+            "costs": costs,
+            "profit": rev - costs,
+            "margin": (rev - costs) / rev if rev else 0,
+            "feed_share": feed / costs if costs else 0,
+        },
+        "team": {
+            "total": len(people),
+            "workers": sum(p["role"] == "worker" for p in people),
+            "technicians": sum(p["role"] == "technician" for p in people),
+        },
+        "summary": summary["text"],
+        "actions": summary["actions"],
     }
 
 
@@ -84,9 +125,13 @@ def today(ctx: Ctx = Depends(current_ctx), db: Session = Depends(get_db)):
     basins = live_basins(db, ctx.owner_id)
     kind = role_alert_kind(ctx.role)
     rel = alerts_for(db, ctx.owner_id, resolved=False, kind=kind) if ctx.can("alerts") else []
-    out = {"healthy": sum(b["status"] == "healthy" for b in basins), "basin_count": len(basins),
-           "alerts": rel, "high": sum(SEV_RANK[a["severity"]] >= 3 for a in rel),
-           "basins": basins if ctx.can("basins") else []}
+    out = {
+        "healthy": sum(b["status"] == "healthy" for b in basins),
+        "basin_count": len(basins),
+        "alerts": rel,
+        "high": sum(SEV_RANK[a["severity"]] >= 3 for a in rel),
+        "basins": basins if ctx.can("basins") else [],
+    }
     if ctx.role == "worker" or ctx.is_owner:
         out["hero_text"] = br.worker_hero_text(rel, {b["id"]: b for b in basins}, tz, now)
         out["tasks"] = br.tasks_json(db, ctx.owner_id, assignee=ctx.user.id)
@@ -95,9 +140,12 @@ def today(ctx: Ctx = Depends(current_ctx), db: Session = Depends(get_db)):
     if ctx.role == "technician" or ctx.is_owner:
         sensors = db.scalars(select(Sensor).where(Sensor.owner_user_id == ctx.owner_id).order_by(Sensor.code)).all()
         names = {b["id"]: b["name"] for b in basins}
-        out["probes"] = {"total": len(sensors),
-                         "bad": [{"code": s.code, "basin": names.get(str(s.basin_id), ""), "health": s.health}
-                                 for s in sensors if s.health != "ok"]}
+        out["probes"] = {
+            "total": len(sensors),
+            "bad": [
+                {"code": s.code, "basin": names.get(str(s.basin_id), ""), "health": s.health} for s in sensors if s.health != "ok"
+            ],
+        }
         out["open_tasks"] = br.tasks_json(db, ctx.owner_id, open_only=True)
         lc = br.last_calibration(db, ctx.owner_id)
         out["last_calibration"] = lc.isoformat() if lc else None
@@ -157,8 +205,9 @@ def resume(ctx: Ctx = Depends(require_owner), db: Session = Depends(get_db)):
 def demo_load(ctx: Ctx = Depends(require_owner), db: Session = Depends(get_db)):
     if db.scalar(select(func.count()).select_from(Basin).where(Basin.owner_user_id == ctx.owner_id)):
         raise HTTPException(409, "Your farm already has basins. The demo can only be loaded into an empty farm.")
-    if db.scalar(select(func.count()).select_from(UserRole).where(UserRole.owner_user_id == ctx.owner_id,
-                                                                  UserRole.role != "owner")):
+    if db.scalar(
+        select(func.count()).select_from(UserRole).where(UserRole.owner_user_id == ctx.owner_id, UserRole.role != "owner")
+    ):
         raise HTTPException(409, "Your farm already has team members. The demo can only be loaded into an empty farm.")
     load_demo(db, ctx.owner_id)
     notify(db, {"type": "farm", "owner_id": str(ctx.owner_id), "action": "demo_loaded"})

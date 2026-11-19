@@ -19,8 +19,9 @@ from .model import NOISE_SD, TYPE_OF, apply_fault, expected, local_hours
 METRIC_OF_TYPE = {v: k for k, v in TYPE_OF.items()}
 
 
-def backfill_owner(db: Session, owner_id: uuid.UUID, *, days: int = 30, step_minutes: int = 5,
-                   end: datetime | None = None, seed: int = 20261118) -> int:
+def backfill_owner(
+    db: Session, owner_id: uuid.UUID, *, days: int = 30, step_minutes: int = 5, end: datetime | None = None, seed: int = 20261118
+) -> int:
     owner = db.get(Owner, owner_id)
     tz = owner.timezone if owner else "Europe/Paris"
     end = (end or datetime.now(UTC)).replace(microsecond=0)
@@ -50,8 +51,7 @@ def backfill_owner(db: Session, owner_id: uuid.UUID, *, days: int = 30, step_min
     db.execute(text("SET LOCAL app.bulk_load = 'off'"))
 
     for sid, v in last.items():
-        db.execute(text("UPDATE sensors SET last_value = :v, last_reading_at = :t WHERE id = :id"),
-                   {"v": v, "t": end, "id": sid})
+        db.execute(text("UPDATE sensors SET last_value = :v, last_reading_at = :t WHERE id = :id"), {"v": v, "t": end, "id": sid})
     aggregate_hourly(db, owner_id=owner_id, since=times[0])
     for b in basins:
         db.execute(text("SELECT ff_refresh_basin_status(:b)"), {"b": b.id})

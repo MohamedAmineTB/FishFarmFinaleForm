@@ -13,3 +13,4 @@ ignore = ["B008"]  # FastAPI dependencies in defaults
 
 [tool.ruff.lint.per-file-ignores]
 "alembic/versions/*" = ["E501"]  # long SQL strings
+"app/assistant/mock.py" = ["E501"]  # answer templates in three languages

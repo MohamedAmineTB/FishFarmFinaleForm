@@ -36,9 +36,17 @@ def add_member(body: MemberIn, ctx: Ctx = Depends(require_owner), db: Session = 
     if not HHMM.match(body.shift_start) or not HHMM.match(body.shift_end):
         raise HTTPException(422, "Shift times must look like 06:00.")
     try:
-        u = create_member(db, ctx.owner_id, name=body.name.strip(), email=body.email, password=body.password,
-                          role=body.role, shift_start=body.shift_start, shift_end=body.shift_end,
-                          permissions=dict(DEFAULT_PERMISSIONS[body.role]))
+        u = create_member(
+            db,
+            ctx.owner_id,
+            name=body.name.strip(),
+            email=body.email,
+            password=body.password,
+            role=body.role,
+            shift_start=body.shift_start,
+            shift_end=body.shift_end,
+            permissions=dict(DEFAULT_PERMISSIONS[body.role]),
+        )
     except EmailTaken as e:
         raise HTTPException(409, {"code": "email_taken", "message": "This email already has an account."}) from e
     notify(db, {"type": "team", "owner_id": str(ctx.owner_id), "action": "added", "user_id": str(u.id)})
@@ -51,8 +59,7 @@ class PermissionsIn(BaseModel):
 
 
 @router.patch("/{user_id}/permissions")
-def set_permissions(user_id: uuid.UUID, body: PermissionsIn, ctx: Ctx = Depends(require_owner),
-                    db: Session = Depends(get_db)):
+def set_permissions(user_id: uuid.UUID, body: PermissionsIn, ctx: Ctx = Depends(require_owner), db: Session = Depends(get_db)):
     r = db.get(UserRole, user_id)
     if not r or r.owner_user_id != ctx.owner_id or r.role == "owner":
         raise HTTPException(404, "Team member not found.")
@@ -61,7 +68,6 @@ def set_permissions(user_id: uuid.UUID, body: PermissionsIn, ctx: Ctx = Depends(
         raise HTTPException(422, f"Unknown permissions: {', '.join(sorted(unknown))}")
     r.permissions = {**r.permissions, **body.permissions}
     # pushed live: the member's menu updates without a refresh
-    notify(db, {"type": "permissions", "owner_id": str(ctx.owner_id), "user_id": str(user_id),
-                "permissions": r.permissions})
+    notify(db, {"type": "permissions", "owner_id": str(ctx.owner_id), "user_id": str(user_id), "permissions": r.permissions})
     db.commit()
     return {"permissions": r.permissions}

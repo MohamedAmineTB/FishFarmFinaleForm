@@ -74,7 +74,8 @@ class Thresholds:
 
     def as_dict(self) -> dict:
         return {
-            "species": self.species, "name": self.name,
+            "species": self.species,
+            "name": self.name,
             "do": {"warn": self.do_warn, "crit": self.do_crit, "emergency": self.do_emergency},
             "temp": {"min": self.temp_min, "max": self.temp_max},
             "ph": {"min": self.ph_min, "max": self.ph_max},
@@ -93,13 +94,18 @@ def load_thresholds(db: Session) -> dict[str, Thresholds]:
         m = by.get(sp, {})
         o, t, p = m.get("oxygen"), m.get("temperature"), m.get("ph")
         out[sp] = Thresholds(
-            species=sp, name=SPECIES_NAMES[sp],
-            do_warn=o.warning_min if o else None, do_crit=o.critical_min if o else None,
+            species=sp,
+            name=SPECIES_NAMES[sp],
+            do_warn=o.warning_min if o else None,
+            do_crit=o.critical_min if o else None,
             do_emergency=o.emergency_min if o else None,
-            temp_min=t.warning_min if t else None, temp_max=t.warning_max if t else None,
-            ph_min=p.warning_min if p else None, ph_max=p.warning_max if p else None,
-            sources={k: {"label": v.source_label, "url": v.source_url, "verified": v.verified, "note": v.note}
-                     for k, v in m.items()},
+            temp_min=t.warning_min if t else None,
+            temp_max=t.warning_max if t else None,
+            ph_min=p.warning_min if p else None,
+            ph_max=p.warning_max if p else None,
+            sources={
+                k: {"label": v.source_label, "url": v.source_url, "verified": v.verified, "note": v.note} for k, v in m.items()
+            },
         )
     return out
 

@@ -17,8 +17,11 @@ router = APIRouter(prefix="/api/alerts", tags=["alerts"])
 
 
 @router.get("")
-def list_alerts(status: str = Query("open", pattern="^(open|resolved|all)$"),
-                ctx: Ctx = Depends(require_perm("alerts")), db: Session = Depends(get_db)):
+def list_alerts(
+    status: str = Query("open", pattern="^(open|resolved|all)$"),
+    ctx: Ctx = Depends(require_perm("alerts")),
+    db: Session = Depends(get_db),
+):
     kind = role_alert_kind(ctx.role)
     if status == "all":
         return alerts_for(db, ctx.owner_id, kind=kind)
@@ -49,8 +52,7 @@ class ResolveIn(BaseModel):
 
 
 @router.post("/{alert_id}/resolve")
-def resolve(alert_id: uuid.UUID, body: ResolveIn, ctx: Ctx = Depends(require_perm("alerts")),
-            db: Session = Depends(get_db)):
+def resolve(alert_id: uuid.UUID, body: ResolveIn, ctx: Ctx = Depends(require_perm("alerts")), db: Session = Depends(get_db)):
     a = _get(db, ctx, alert_id)
     if a.is_resolved:
         raise HTTPException(409, "This alert is already resolved.")
@@ -63,8 +65,17 @@ def resolve(alert_id: uuid.UUID, body: ResolveIn, ctx: Ctx = Depends(require_per
             s.sim_fault, s.last_calibrated_at, s.health, s.health_note = None, now, "ok", "Repaired, waiting for new readings"
     db.flush()
     db.execute(text("SELECT ff_refresh_basin_status(:b)"), {"b": a.basin_id})
-    notify(db, {"type": "alert", "action": "resolved", "owner_id": str(ctx.owner_id), "alert_id": str(a.id),
-                "kind": a.kind, "by": ctx.user.name})
+    notify(
+        db,
+        {
+            "type": "alert",
+            "action": "resolved",
+            "owner_id": str(ctx.owner_id),
+            "alert_id": str(a.id),
+            "kind": a.kind,
+            "by": ctx.user.name,
+        },
+    )
     db.commit()
     return _out(db, a)
 
@@ -75,7 +86,6 @@ def reopen(alert_id: uuid.UUID, ctx: Ctx = Depends(require_perm("alerts")), db: 
     a.is_resolved, a.resolved_by, a.resolved_at, a.resolution_note = False, None, None, None
     db.flush()
     db.execute(text("SELECT ff_refresh_basin_status(:b)"), {"b": a.basin_id})
-    notify(db, {"type": "alert", "action": "reopened", "owner_id": str(ctx.owner_id), "alert_id": str(a.id),
-                "kind": a.kind})
+    notify(db, {"type": "alert", "action": "reopened", "owner_id": str(ctx.owner_id), "alert_id": str(a.id), "kind": a.kind})
     db.commit()
     return _out(db, a)

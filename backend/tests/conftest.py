@@ -75,12 +75,21 @@ def tech_h(client):
 
 @pytest.fixture(scope="session")
 def other_owner_h(client):
-    r = client.post("/api/auth/register", json={"name": "Omar Other", "email": "omar@other.farm",
-                                                 "password": "secret-pass-1", "farm": "Other Farm",
-                                                 "company": "Other Co", "country": "Morocco"})
+    r = client.post(
+        "/api/auth/register",
+        json={
+            "name": "Omar Other",
+            "email": "omar@other.farm",
+            "password": "secret-pass-1",
+            "farm": "Other Farm",
+            "company": "Other Co",
+            "country": "Morocco",
+        },
+    )
     assert r.status_code == 200, r.text
     h = {"Authorization": f"Bearer {r.json()['access_token']}"}
-    r = client.post("/api/basins", headers=h, json={"name": "Pond A", "species": "common_carp", "capacity": 50,
-                                                    "fish_count": 900})
+    r = client.post(
+        "/api/basins", headers=h, json={"name": "Pond A", "species": "common_carp", "capacity": 50, "fish_count": 900}
+    )
     assert r.status_code == 201
     return h

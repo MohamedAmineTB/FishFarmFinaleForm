@@ -26,10 +26,19 @@ async def lifespan(app: FastAPI):
     hub.stop()
 
 
-app = FastAPI(title="FishFarm API", version="1.0.0", lifespan=lifespan,
-              description="Fish-farm monitoring: basins, live readings, alerts, team, reports, ML and assistant.")
-app.add_middleware(CORSMiddleware, allow_origins=get_settings().cors_origins.split(","), allow_credentials=True,
-                   allow_methods=["*"], allow_headers=["*"])
+app = FastAPI(
+    title="FishFarm API",
+    version="1.0.0",
+    lifespan=lifespan,
+    description="Fish-farm monitoring: basins, live readings, alerts, team, reports, ML and assistant.",
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_settings().cors_origins.split(","),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 for r in (auth, farm, basins, alerts, reports, team, work):
     app.include_router(r.router)

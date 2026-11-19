@@ -52,8 +52,10 @@ def test_day_night_oxygen_cycle():
 def test_simulator_spikes_dirty_data_and_faults():
     owner = uuid.uuid4()
     b = SimBasin(id=uuid.uuid4(), owner_id=owner, profile=default_profile("tilapia"), tz="Europe/Paris")
-    b.sensors = [SimSensor(id=uuid.uuid4(), owner_id=owner, basin_id=b.id, metric=m, min_value=lo, max_value=hi,
-                           fault=None) for m, lo, hi in (("temp", 22, 34), ("ph", 6.5, 8.5), ("do", 5, None))]
+    b.sensors = [
+        SimSensor(id=uuid.uuid4(), owner_id=owner, basin_id=b.id, metric=m, min_value=lo, max_value=hi, fault=None)
+        for m, lo, hi in (("temp", 22, 34), ("ph", 6.5, 8.5), ("do", 5, None))
+    ]
     sim = Simulator(spike_prob=1.0, dirty_prob=1.0, fault_prob=1.0, seed=1)
     raw, faults = sim.tick([b], datetime.now(UTC))
     assert len(raw) >= 3
@@ -96,8 +98,10 @@ def test_etl_load_runs_trigger_and_logs(client):
         world = [b for b in load_world(db) if b.sensors]
         sensor = world[0].sensors[0]
         before = db.execute(text("SELECT count(*) FROM readings WHERE sensor_id = :s"), {"s": sensor.id}).scalar()
-        raw = [_raw(sensor.id, sensor.owner_id, sensor.metric, 7.0 if sensor.metric != "temp" else 25.0,
-                    datetime.now(UTC)), _raw(sensor.id, sensor.owner_id, sensor.metric, None, datetime.now(UTC))]
+        raw = [
+            _raw(sensor.id, sensor.owner_id, sensor.metric, 7.0 if sensor.metric != "temp" else 25.0, datetime.now(UTC)),
+            _raw(sensor.id, sensor.owner_id, sensor.metric, None, datetime.now(UTC)),
+        ]
         df, reasons = clean(raw, {sensor.id})
         assert load(db, df) == 1
         log = EtlLog()

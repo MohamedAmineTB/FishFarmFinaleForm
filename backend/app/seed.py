@@ -26,16 +26,26 @@ def main(reset: bool = False) -> None:
             return
         if existing:
             # deleting the owner cascades to the whole farm
-            team = db.execute(text("SELECT user_id FROM user_roles WHERE owner_user_id = :o AND user_id <> :o"),
-                              {"o": existing.id}).scalars().all()
+            team = (
+                db.execute(text("SELECT user_id FROM user_roles WHERE owner_user_id = :o AND user_id <> :o"), {"o": existing.id})
+                .scalars()
+                .all()
+            )
             for uid in team:
                 db.execute(text("DELETE FROM users WHERE id = :u"), {"u": uid})
             for t in ("readings", "alerts", "reports", "tasks", "maintenance", "predictions", "hourly_stats"):
                 db.execute(text(f"DELETE FROM {t} WHERE owner_user_id = :o"), {"o": existing.id})
             db.execute(text("DELETE FROM users WHERE id = :u"), {"u": existing.id})
             db.flush()
-        owner = create_owner(db, name="Nadia Amrani", email=DEMO_OWNER, password="demo1234", farm_name="Lac Vert",
-                             company="Lac Vert Aquaculture", country="France")
+        owner = create_owner(
+            db,
+            name="Nadia Amrani",
+            email=DEMO_OWNER,
+            password="demo1234",
+            farm_name="Lac Vert",
+            company="Lac Vert Aquaculture",
+            country="France",
+        )
         load_demo(db, owner.id, team_emails="public")
     # oxygen-drop predictions straight away (trains the model first if there is none)
     with session_scope() as db:

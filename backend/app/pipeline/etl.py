@@ -55,9 +55,10 @@ def clean(raw: list[dict], known_sensors: set[uuid.UUID]) -> tuple[pd.DataFrame,
 def load(db: Session, df: pd.DataFrame) -> int:
     if df.empty:
         return 0
-    db.execute(text("INSERT INTO readings (owner_user_id, sensor_id, value, recorded_at) VALUES (:o, :s, :v, :t)"),
-               [{"o": r.owner_id, "s": r.sensor_id, "v": float(r.value), "t": r.recorded_at}
-                for r in df.itertuples(index=False)])
+    db.execute(
+        text("INSERT INTO readings (owner_user_id, sensor_id, value, recorded_at) VALUES (:o, :s, :v, :t)"),
+        [{"o": r.owner_id, "s": r.sensor_id, "v": float(r.value), "t": r.recorded_at} for r in df.itertuples(index=False)],
+    )
     for owner in df["owner_id"].unique():
         notify(db, {"type": "readings", "owner_id": str(owner), "at": datetime.now(UTC).isoformat()})
     return len(df)
@@ -78,8 +79,15 @@ class EtlLog:
     def flush(self, db: Session, source: str = "simulator") -> None:
         if not self.received:
             return
-        db.add(EtlRun(source=source, received=self.received, accepted=self.accepted,
-                      rejected=self.received - self.accepted, reasons=dict(self.reasons)))
+        db.add(
+            EtlRun(
+                source=source,
+                received=self.received,
+                accepted=self.accepted,
+                rejected=self.received - self.accepted,
+                reasons=dict(self.reasons),
+            )
+        )
         db.flush()
         self.received = self.accepted = 0
         self.reasons = Counter()

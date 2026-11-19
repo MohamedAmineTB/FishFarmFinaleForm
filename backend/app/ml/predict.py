@@ -59,12 +59,24 @@ def predict_basin(db: Session, basin: Basin, store: bool = False) -> Prediction 
     top = []
     for label, unit, col in DISPLAY:
         v = float(last[col])
-        top.append({"name": col, "label": label, "unit": unit,
-                    "value": round(v, 2) if col == "do_decline_3h" else round(v, 1) if col == "temp_now" else round(v)})
-    p = Prediction(owner_user_id=basin.owner_user_id, basin_id=basin.id, probability=prob,
-                   horizon="before 06:00 (local time)",
-                   features={k: round(float(last[k]), 4) for k in FEATURES}, top_features=top,
-                   model_version=bundle.get("version", "v1"), created_at=datetime.now(UTC))
+        top.append(
+            {
+                "name": col,
+                "label": label,
+                "unit": unit,
+                "value": round(v, 2) if col == "do_decline_3h" else round(v, 1) if col == "temp_now" else round(v),
+            }
+        )
+    p = Prediction(
+        owner_user_id=basin.owner_user_id,
+        basin_id=basin.id,
+        probability=prob,
+        horizon="before 06:00 (local time)",
+        features={k: round(float(last[k]), 4) for k in FEATURES},
+        top_features=top,
+        model_version=bundle.get("version", "v1"),
+        created_at=datetime.now(UTC),
+    )
     if store:
         db.add(p)
         db.flush()

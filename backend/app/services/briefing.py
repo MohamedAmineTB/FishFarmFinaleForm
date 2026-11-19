@@ -16,8 +16,14 @@ from ..domain import SPECIES_NAMES
 from ..models import Owner, Sensor, Task, User, UserRole
 from .views import alerts_for, basins_with_sensors, live_basins, overnight_low, series_24h
 
-SPECIES_SHORT = {"tilapia": "tilapia", "rainbow_trout": "trout", "common_carp": "carp", "sea_bass": "sea bass",
-                 "sea_bream": "sea bream", "atlantic_salmon": "salmon"}
+SPECIES_SHORT = {
+    "tilapia": "tilapia",
+    "rainbow_trout": "trout",
+    "common_carp": "carp",
+    "sea_bass": "sea bass",
+    "sea_bream": "sea bream",
+    "atlantic_salmon": "salmon",
+}
 METRIC_WORD = {"temperature": "temperature", "ph": "pH", "oxygen": "oxygen"}
 
 
@@ -49,11 +55,24 @@ def on_shift_at(start: str, end: str, hour: float) -> bool:
 
 
 def team(db: Session, owner_id: uuid.UUID) -> list[dict]:
-    rows = db.execute(select(User, UserRole).join(UserRole, UserRole.user_id == User.id)
-                      .where(UserRole.owner_user_id == owner_id, UserRole.role != "owner")
-                      .order_by(UserRole.created_at, User.name)).all()
-    return [{"id": str(u.id), "name": u.name, "email": u.email, "role": r.role, "shift_start": r.shift_start,
-             "shift_end": r.shift_end, "permissions": r.permissions} for u, r in rows]
+    rows = db.execute(
+        select(User, UserRole)
+        .join(UserRole, UserRole.user_id == User.id)
+        .where(UserRole.owner_user_id == owner_id, UserRole.role != "owner")
+        .order_by(UserRole.created_at, User.name)
+    ).all()
+    return [
+        {
+            "id": str(u.id),
+            "name": u.name,
+            "email": u.email,
+            "role": r.role,
+            "shift_start": r.shift_start,
+            "shift_end": r.shift_end,
+            "permissions": r.permissions,
+        }
+        for u, r in rows
+    ]
 
 
 def overnight_lows(db: Session, owner_id: uuid.UUID, now: datetime) -> dict[str, dict]:
@@ -116,13 +135,30 @@ def owner_actions(db: Session, owner_id: uuid.UUID, now: datetime | None = None)
         else:
             a = o2_alert(rb)
             sub = f"18:00 · oxygen fell to {a['value']:.1f} mg/L {when_phrase(a['time'], tz, now)}"
-        acts.append({"time": "18:00", "title": f"Cut the {rb['name']} evening feed by a third", "text": sub,
-                     "action": {"type": "ask", "q": f"Why did oxygen drop in {rb['name']} last night?"}})
-        night = next((p for p in people if p["role"] == "worker" and p["shift_start"]
-                      and on_shift_at(p["shift_start"], p["shift_end"], 23)), None)
-        acts.append({"time": "22:00", "title": f"Run the {rb['name']} aerator until sunrise",
-                     "text": "22:00 · " + (f"night worker {night['name']}" if night else "whoever is on the night shift"),
-                     "action": {"type": "open-basin", "id": rb["id"]}})
+        acts.append(
+            {
+                "time": "18:00",
+                "title": f"Cut the {rb['name']} evening feed by a third",
+                "text": sub,
+                "action": {"type": "ask", "q": f"Why did oxygen drop in {rb['name']} last night?"},
+            }
+        )
+        night = next(
+            (
+                p
+                for p in people
+                if p["role"] == "worker" and p["shift_start"] and on_shift_at(p["shift_start"], p["shift_end"], 23)
+            ),
+            None,
+        )
+        acts.append(
+            {
+                "time": "22:00",
+                "title": f"Run the {rb['name']} aerator until sunrise",
+                "text": "22:00 · " + (f"night worker {night['name']}" if night else "whoever is on the night shift"),
+                "action": {"type": "open-basin", "id": rb["id"]},
+            }
+        )
 
     # 3: a broken probe goes to the technician
     for a in alerts:
@@ -130,9 +166,14 @@ def owner_actions(db: Session, owner_id: uuid.UUID, now: datetime | None = None)
             tech = next((p for p in people if p["role"] == "technician"), None)
             what = METRIC_WORD.get({"do": "oxygen", "temp": "temperature", "ph": "ph"}.get(a["metric"], ""), "")
             val = f"stuck at {a['value']:.1f} °C" if a["metric"] == "temp" and a["value"] is not None else a["title"].lower()
-            acts.append({"time": "today", "title": f"Check the {a['basin']} {what} probe",
-                         "text": f"today · {val}" + (f", {tech['name']}" if tech else ""),
-                         "action": {"type": "ask", "q": f"Is the {a['basin']} alert a sensor problem?"}})
+            acts.append(
+                {
+                    "time": "today",
+                    "title": f"Check the {a['basin']} {what} probe",
+                    "text": f"today · {val}" + (f", {tech['name']}" if tech else ""),
+                    "action": {"type": "ask", "q": f"Is the {a['basin']} alert a sensor problem?"},
+                }
+            )
             break
 
     # other open water alerts, then routine
@@ -141,13 +182,23 @@ def owner_actions(db: Session, owner_id: uuid.UUID, now: datetime | None = None)
             break
         if a["kind"] == "water" and not (rb and a["basin_id"] == rb["id"] and a["metric"] == "do"):
             what = {"ph": "pH", "temp": "temperature", "do": "oxygen"}[a["metric"]]
-            acts.append({"time": "15:00" if a["metric"] == "ph" else "today",
-                         "title": f"Re-check the {a['basin']} {what}",
-                         "text": f"{'15:00' if a['metric'] == 'ph' else 'today'} · {a['title']} ({a['severity']})",
-                         "action": {"type": "ask", "q": f"Explain alert {a['id']}"}})
+            acts.append(
+                {
+                    "time": "15:00" if a["metric"] == "ph" else "today",
+                    "title": f"Re-check the {a['basin']} {what}",
+                    "text": f"{'15:00' if a['metric'] == 'ph' else 'today'} · {a['title']} ({a['severity']})",
+                    "action": {"type": "ask", "q": f"Explain alert {a['id']}"},
+                }
+            )
     if len(acts) < 3:
-        acts.append({"time": "today", "title": "Walk the basins and read the shift reports",
-                     "text": "today · no other open problems", "action": {"type": "nav", "view": "reports"}})
+        acts.append(
+            {
+                "time": "today",
+                "title": "Walk the basins and read the shift reports",
+                "text": "today · no other open problems",
+                "action": {"type": "nav", "view": "reports"},
+            }
+        )
     return acts[:3]
 
 
@@ -185,8 +236,7 @@ def worker_hero_text(alerts: list[dict], basins: dict[str, dict], tz: ZoneInfo, 
     return f"{n} water alert{'s' if n > 1 else ''} open. Start with {a['basin']}: {start}."
 
 
-def tasks_json(db: Session, owner_id: uuid.UUID, *, assignee: uuid.UUID | None = None,
-               open_only: bool = False) -> list[dict]:
+def tasks_json(db: Session, owner_id: uuid.UUID, *, assignee: uuid.UUID | None = None, open_only: bool = False) -> list[dict]:
     q = select(Task).where(Task.owner_user_id == owner_id)
     if assignee:
         q = q.where(Task.assignee_user_id == assignee)
@@ -205,18 +255,31 @@ def tasks_json(db: Session, owner_id: uuid.UUID, *, assignee: uuid.UUID | None =
         d = (t.due_date - today).days
         return "Today" if d == 0 else "Tomorrow" if d == 1 else "Yesterday" if d == -1 else f"{t.due_date:%d %b}"
 
-    return [{"id": str(t.id), "title": t.title, "who": names.get(t.assignee_user_id, "Unassigned"),
-             "assignee_id": str(t.assignee_user_id) if t.assignee_user_id else None, "due": due(t),
-             "due_date": t.due_date.isoformat() if t.due_date else None, "status": t.status, "source": t.source}
-            for t in rows]
+    return [
+        {
+            "id": str(t.id),
+            "title": t.title,
+            "who": names.get(t.assignee_user_id, "Unassigned"),
+            "assignee_id": str(t.assignee_user_id) if t.assignee_user_id else None,
+            "due": due(t),
+            "due_date": t.due_date.isoformat() if t.due_date else None,
+            "status": t.status,
+            "source": t.source,
+        }
+        for t in rows
+    ]
 
 
 def last_calibration(db: Session, owner_id: uuid.UUID) -> datetime | None:
-    return max((s.last_calibrated_at for s in db.scalars(select(Sensor).where(Sensor.owner_user_id == owner_id))
-                if s.last_calibrated_at), default=None)
+    return max(
+        (
+            s.last_calibrated_at
+            for s in db.scalars(select(Sensor).where(Sensor.owner_user_id == owner_id))
+            if s.last_calibrated_at
+        ),
+        default=None,
+    )
 
 
 def species_name(code: str) -> str:
     return SPECIES_NAMES.get(code, code)
-
-

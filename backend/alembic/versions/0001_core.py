@@ -435,12 +435,34 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.execute("DROP TRIGGER IF EXISTS trg_readings_alert ON readings")
-    for fn in ("ff_on_reading()", "ff_evaluate_reading(uuid, double precision, timestamptz)", "ff_refresh_basin_status(uuid)", "ff_basin_status(uuid)",
-               "ff_num(double precision, boolean)", "ff_species_name(text)"):
+    for fn in (
+        "ff_on_reading()",
+        "ff_evaluate_reading(uuid, double precision, timestamptz)",
+        "ff_refresh_basin_status(uuid)",
+        "ff_basin_status(uuid)",
+        "ff_num(double precision, boolean)",
+        "ff_species_name(text)",
+    ):
         op.execute(f"DROP FUNCTION IF EXISTS {fn}")
-    for t in ("predictions", "etl_runs", "simulator_state", "tasks", "report_reads", "reports", "maintenance",
-              "alerts", "hourly_stats", "readings", "sensors", "basins", "species_thresholds", "refresh_tokens",
-              "user_roles", "owners", "users"):
+    for t in (
+        "predictions",
+        "etl_runs",
+        "simulator_state",
+        "tasks",
+        "report_reads",
+        "reports",
+        "maintenance",
+        "alerts",
+        "hourly_stats",
+        "readings",
+        "sensors",
+        "basins",
+        "species_thresholds",
+        "refresh_tokens",
+        "user_roles",
+        "owners",
+        "users",
+    ):
         op.execute(f"DROP TABLE IF EXISTS {t} CASCADE")
     for e in ("task_status", "alert_severity", "sensor_status", "sensor_type", "basin_status", "app_role"):
         op.execute(f"DROP TYPE IF EXISTS {e}")

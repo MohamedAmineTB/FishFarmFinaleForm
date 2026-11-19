@@ -37,19 +37,32 @@ def _session(db: Session, response: Response, user: User) -> dict:
     s = get_settings()
     ctx = load_ctx(db, user.id)
     token, digest = new_refresh_token()
-    db.add(RefreshToken(user_id=user.id, token_hash=digest,
-                        expires_at=datetime.now(UTC) + timedelta(days=s.refresh_token_days)))
+    db.add(RefreshToken(user_id=user.id, token_hash=digest, expires_at=datetime.now(UTC) + timedelta(days=s.refresh_token_days)))
     db.commit()
-    response.set_cookie(COOKIE, token, httponly=True, secure=s.cookie_secure, samesite="lax", path="/api/auth",
-                        max_age=s.refresh_token_days * 86400)
+    response.set_cookie(
+        COOKIE,
+        token,
+        httponly=True,
+        secure=s.cookie_secure,
+        samesite="lax",
+        path="/api/auth",
+        max_age=s.refresh_token_days * 86400,
+    )
     return {"access_token": create_access_token(user.id, ctx.role, ctx.owner_id), "role": ctx.role}
 
 
 @router.post("/register")
 def register(body: RegisterIn, response: Response, db: Session = Depends(get_db)):
     try:
-        user = create_owner(db, name=body.name.strip(), email=body.email, password=body.password,
-                            farm_name=body.farm.strip(), company=body.company.strip(), country=body.country)
+        user = create_owner(
+            db,
+            name=body.name.strip(),
+            email=body.email,
+            password=body.password,
+            farm_name=body.farm.strip(),
+            company=body.company.strip(),
+            country=body.country,
+        )
     except EmailTaken as e:
         raise HTTPException(409, {"code": "email_taken", "message": "This email already has an account."}) from e
     db.commit()
@@ -60,15 +73,18 @@ def register(body: RegisterIn, response: Response, db: Session = Depends(get_db)
 def login(body: LoginIn, response: Response, db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(func.lower(User.email) == body.email.lower()))
     if not user or not verify_password(body.password, user.password_hash):
-        raise HTTPException(401, {"code": "bad_credentials",
-                                  "message": "Wrong email or password. Check both, or use a demo account below."})
+        raise HTTPException(
+            401, {"code": "bad_credentials", "message": "Wrong email or password. Check both, or use a demo account below."}
+        )
     role = db.get(UserRole, user.id)
     if body.portal == "owner" and role.role != "owner":
-        raise HTTPException(403, {"code": "wrong_portal", "role": role.role,
-                                  "message": f"This is a {role.role} account. Use team sign in."})
+        raise HTTPException(
+            403, {"code": "wrong_portal", "role": role.role, "message": f"This is a {role.role} account. Use team sign in."}
+        )
     if body.portal == "team" and role.role == "owner":
-        raise HTTPException(403, {"code": "wrong_portal", "role": "owner",
-                                  "message": "This is an owner account. Use owner sign in."})
+        raise HTTPException(
+            403, {"code": "wrong_portal", "role": "owner", "message": "This is an owner account. Use owner sign in."}
+        )
     return _session(db, response, user)
 
 
