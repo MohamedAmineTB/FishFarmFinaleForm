@@ -37,6 +37,11 @@ def main(reset: bool = False) -> None:
         owner = create_owner(db, name="Nadia Amrani", email=DEMO_OWNER, password="demo1234", farm_name="Lac Vert",
                              company="Lac Vert Aquaculture", country="France")
         load_demo(db, owner.id, team_emails="public")
+    # oxygen-drop predictions straight away (trains the model first if there is none)
+    with session_scope() as db:
+        from .ml.predict import predict_all
+
+        predict_all(db)
     print(f"Demo farm ready in {time.time() - t0:.1f}s")
 
 

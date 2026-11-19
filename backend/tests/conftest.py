@@ -7,6 +7,10 @@ os.environ["DATABASE_URL"] = TEST_DB
 os.environ.setdefault("JWT_SECRET", "test-secret-0123456789-0123456789-abcdef")
 os.environ["LLM_PROVIDER"] = "mock"
 os.environ["EMBEDDING_BACKEND"] = "hash"
+# the tests train their own model in a temporary folder (never overwrite ml/artifacts)
+import tempfile  # noqa: E402
+
+os.environ["MODEL_DIR"] = tempfile.mkdtemp(prefix="ff-model-")
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
