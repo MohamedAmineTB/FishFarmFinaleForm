@@ -37,9 +37,7 @@ const S = [
     await p.waitForSelector('#oErr');
   }],
   ['05-owner-create-farm-validation', D(900), null, '/owner-auth', async (p) => {
-    await p.click('text=Create farm >> nth=0');
-    await p.fill('#rEmail', 'not-an-email');
-    await p.fill('#rPass', 'short');
+    await p.click('[role=tab]:has-text("Create farm")');
     await p.click('button[type=submit]');
   }],
   ['06-team-sign-in', D(900), null, '/worker-auth'],
@@ -51,10 +49,10 @@ const S = [
   }],
   ['14-owner-alerts-open', D(1900), OWNER, '/owner/alerts'],
   ['15-alert-resolve-dialog', D(1900), OWNER, '/owner/alerts', async (p) => {
-    await p.click('.alert >> nth=1 >> .check');
+    await p.click('.alert >> nth=0 >> .check');
   }],
   ['16-alert-just-resolved', D(1900), OWNER, '/owner/alerts', async (p) => {
-    await p.click('.alert >> nth=1 >> .check');
+    await p.click('.alert >> nth=0 >> .check');
     await p.fill('#resNote', 'Tested ammonia, all fine. Will re-check pH at 15:00.');
     await p.click('.modal button[type=submit]');
     await p.waitForSelector('.alert.just-done');

@@ -85,8 +85,6 @@ function chipsFor(role: string, page: string, basin?: string) {
     'Why did oxygen drop in Basin 3 last night?',
     'How can I raise revenue?',
     'What is my risk today?',
-    'Give me 3 actions for this week',
-    'Compare margin per basin this quarter',
   ];
 }
 

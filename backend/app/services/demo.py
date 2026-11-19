@@ -51,7 +51,7 @@ BASINS = [
         3100,
         {
             "base": {"temp": 17.6, "do": 7.3, "ph": 7.2},
-            "amp": {"temp": 0.6, "do": 1.6, "ph": 0.2},
+            "amp": {"temp": 0.6, "do": 1.45, "ph": 0.2},
             "night_dip": {"from": 2.8, "to": 5.6, "depth": 0.28},
         },
     ),
@@ -219,7 +219,7 @@ def load_demo(
             source="maintenance",
             due_date=today + timedelta(days=1),
             created_by=owner_id,
-            created_at=now - timedelta(hours=5),
+            created_at=now - timedelta(hours=4),
         )
     )
     db.add(
@@ -232,7 +232,7 @@ def load_demo(
             source="manual",
             due_date=today,
             created_by=owner_id,
-            created_at=now - timedelta(hours=4),
+            created_at=now - timedelta(hours=5),
         )
     )
     db.flush()

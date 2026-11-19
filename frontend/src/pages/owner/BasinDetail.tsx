@@ -246,8 +246,9 @@ export default function BasinDetail() {
                 <div key={f.name}>
                   <span>{f.label}</span>
                   <span className="mono">
-                    {f.value}
-                    {f.unit ? ' ' + f.unit : ''}
+                    {f.name === 'temp_now'
+                      ? fmt(f.value, 1)
+                      : `${f.name === 'do_decline_3h' ? fmt(f.value, 2) : Math.round(f.value)} ${f.unit}`}
                   </span>
                 </div>
               ))
@@ -260,7 +261,7 @@ export default function BasinDetail() {
           </div>
           <button
             className="small-btn"
-            style={{ justifySelf: 'start' }}
+            style={{ alignSelf: 'flex-start' }}
             onClick={() => ai.ask(`Explain the oxygen risk of ${b.name}`)}
           >
             <Icon name="chat" size={14} />

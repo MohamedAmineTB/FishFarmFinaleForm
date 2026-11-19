@@ -16,7 +16,7 @@ function AlertItem({ a, justDone, onCheck }: { a: Alert; justDone: string | null
   const who = a.kind === 'sensor' ? 'the technician' : 'the worker on shift';
   return (
     <div
-      className={`alert sev-${a.severity}${done ? ' done' : ''}${justDone !== null ? ' just-done' : ''}`}
+      className={`alert sev-${a.severity}${a.resolved && justDone === null ? ' done' : ''}${justDone !== null ? ' just-done' : ''}`}
       data-aid={a.id}
     >
       <span className="stripe" />
@@ -51,7 +51,7 @@ function AlertItem({ a, justDone, onCheck }: { a: Alert; justDone: string | null
         </p>
       </div>
       <div className="acts">
-        {!done && (
+        {!a.resolved && (
           <button className="small-btn" onClick={() => ai.ask(`Explain alert ${a.id}`)}>
             <Icon name="chat" size={14} />
             Explain

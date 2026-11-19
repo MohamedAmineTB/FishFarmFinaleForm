@@ -59,7 +59,7 @@ def team(db: Session, owner_id: uuid.UUID) -> list[dict]:
         select(User, UserRole)
         .join(UserRole, UserRole.user_id == User.id)
         .where(UserRole.owner_user_id == owner_id, UserRole.role != "owner")
-        .order_by(UserRole.created_at, User.name)
+        .order_by(UserRole.role, UserRole.shift_start, User.name)
     ).all()
     return [
         {
