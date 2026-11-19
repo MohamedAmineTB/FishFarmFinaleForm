@@ -1,0 +1,61 @@
+{
+  "hash": "df8f2182",
+  "configHash": "3388a25d",
+  "lockfileHash": "4eada9a6",
+  "browserHash": "e5b69904",
+  "optimized": {
+    "react/jsx-dev-runtime": {
+      "src": "../../node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "1ab51398",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "9fd5651f",
+      "needsInterop": true
+    },
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "374eb335",
+      "needsInterop": true
+    },
+    "react-router-dom": {
+      "src": "../../node_modules/react-router-dom/dist/index.js",
+      "file": "react-router-dom.js",
+      "fileHash": "6719c6b8",
+      "needsInterop": false
+    },
+    "gsap": {
+      "src": "../../node_modules/gsap/index.js",
+      "file": "gsap.js",
+      "fileHash": "d791e3cc",
+      "needsInterop": false
+    },
+    "gsap/ScrollTrigger": {
+      "src": "../../node_modules/gsap/ScrollTrigger.js",
+      "file": "gsap_ScrollTrigger.js",
+      "fileHash": "a82bb4d1",
+      "needsInterop": false
+    },
+    "lenis": {
+      "src": "../../node_modules/lenis/dist/lenis.mjs",
+      "file": "lenis.js",
+      "fileHash": "6eba030e",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-H2E4SV6V": {
+      "file": "chunk-H2E4SV6V.js"
+    },
+    "chunk-WNPTCGAH": {
+      "file": "chunk-WNPTCGAH.js"
+    },
+    "chunk-5WRI5ZAA": {
+      "file": "chunk-5WRI5ZAA.js"
+    }
+  }
+}
