@@ -19,3 +19,4 @@ ml/artifacts/*.joblib
 .claude/settings.local.json
 *.log
 .DS_Store
+.vscode/
