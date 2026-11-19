@@ -1,0 +1,21 @@
+# Back end (Python 3.11+). Versions pinned; LiteLLM deliberately not used.
+fastapi==0.135.4
+starlette==1.10.0
+uvicorn[standard]==0.34.3
+pydantic==2.11.7
+pydantic-settings==2.16.3
+email-validator==2.2.0
+sqlalchemy==2.0.58
+alembic==1.15.2
+psycopg[binary]==3.2.13
+bcrypt==4.3.0
+pyjwt==2.10.1
+python-multipart==0.0.34
+sse-starlette==3.7.0
+httpx==0.28.1
+anthropic==2.10.0
+pandas==2.2.3
+numpy==2.5.5
+scikit-learn==1.6.1
+joblib==1.4.2
+tzdata==2026.6
