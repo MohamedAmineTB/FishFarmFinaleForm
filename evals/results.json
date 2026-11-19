@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-11-19T19:12:46.174133+00:00",
+  "generated_at": "2026-11-19T19:33:22.313637+00:00",
   "cases": 44,
   "tool_correctness": 1.0,
   "refusal_accuracy": 1.0,
   "approval_rate": 1.0,
   "forbidden_content_ok": 1.0,
   "language_match": 1.0,
-  "number_grounding_rate": 0.949,
+  "number_grounding_rate": 0.948,
   "per_group": {
     "action": {
       "cases": 3,
@@ -355,7 +355,7 @@
       "lang_ok": true,
       "grounded": 9,
       "numbers": 10,
-      "answer": "Oxygen in **Basin 3** fell to **5.32 mg/L at 04:14**, under the **7.0 mg/L** warning level for rainbow trout. Right now it is 7.62 mg/L (80% of saturation at 17.7 °C).\n\nThis is the normal night pattern: algae stop making oxygen after sunset but keep using it until dawn, so the low comes just before sunrise. The evening feed adds demand, and trout need more oxygen than tilapia or carp.\n\n1. Cut tonight's evening feed in Basin 3 by about a third.\n2. Run the aerator from 22:00 until after sunrise.\n3. Check the reading again at 05:00.",
+      "answer": "Oxygen in **Basin 3** fell to **5.25 mg/L at 03:24**, under the **7.0 mg/L** warning level for rainbow trout. Right now it is 7.56 mg/L (79% of saturation at 17.9 °C).\n\nThis is the normal night pattern: algae stop making oxygen after sunset but keep using it until dawn, so the low comes just before sunrise. The evening feed adds demand, and trout need more oxygen than tilapia or carp.\n\n1. Cut tonight's evening feed in Basin 3 by about a third.\n2. Run the aerator from 22:00 until after sunrise.\n3. Check the reading again at 05:00.",
       "errors": []
     },
     {
@@ -375,7 +375,7 @@
       "lang_ok": true,
       "grounded": 16,
       "numbers": 16,
-      "answer": "**High overall.** These are model estimates, not certainties.\n\n- **Basin 3** (Rainbow trout): 100% chance of oxygen below 7.0 mg/L before 06:00 (local time)\n- **Basin 4** (Common carp): 47% chance of oxygen below 5.0 mg/L before 06:00 (local time)\n- **Basin 1** (Nile tilapia): 0% chance of oxygen below 5.0 mg/L before 06:00 (local time)\n- **Basin 2** (Nile tilapia): 0% chance of oxygen below 5.0 mg/L before 06:00 (local time)",
+      "answer": "**High overall.** These are model estimates, not certainties.\n\n- **Basin 3** (Rainbow trout): 100% chance of oxygen below 7.0 mg/L before 06:00 (local time)\n- **Basin 4** (Common carp): 10% chance of oxygen below 5.0 mg/L before 06:00 (local time)\n- **Basin 1** (Nile tilapia): 1% chance of oxygen below 5.0 mg/L before 06:00 (local time)\n- **Basin 2** (Nile tilapia): 0% chance of oxygen below 5.0 mg/L before 06:00 (local time)",
       "errors": []
     },
     {
@@ -392,9 +392,9 @@
       "approval_ok": true,
       "forbidden_ok": true,
       "lang_ok": true,
-      "grounded": 12,
-      "numbers": 12,
-      "answer": "You have **3 open alerts**:\n\n- **Basin 3** · Oxygen below 7.0 mg/L (high, water, Thu 19 Nov 04:15)\n- **Basin 2** · pH above 8.5 (medium, water, Thu 19 Nov 15:30)\n- **Basin 4** · Temperature probe not changing (low, hardware, Thu 19 Nov 16:40)\n\nStart with the highest severity. Hardware alerts go to the technician.",
+      "grounded": 8,
+      "numbers": 8,
+      "answer": "You have **2 open alerts**:\n\n- **Basin 2** · pH above 8.5 (medium, water, Thu 19 Nov 16:04)\n- **Basin 4** · Temperature probe not changing (low, hardware, Thu 19 Nov 17:14)\n\nStart with the highest severity. Hardware alerts go to the technician.",
       "errors": []
     },
     {
@@ -435,7 +435,7 @@
       "lang_ok": true,
       "grounded": 4,
       "numbers": 5,
-      "answer": "**Probably a sensor problem, not the water.** Probe S-10 (water temperature, Basin 4) is stuck: Flat 26.0 °C for 3 h 35 min. Real water never stays that flat.\n\nThis goes to the technician, not the worker on shift.",
+      "answer": "**Probably a sensor problem, not the water.** Probe S-10 (water temperature, Basin 4) is stuck: Flat 26.0 °C for 3 h 20 min. Real water never stays that flat.\n\nThis goes to the technician, not the worker on shift.",
       "errors": []
     },
     {
@@ -454,7 +454,7 @@
       "lang_ok": true,
       "grounded": 13,
       "numbers": 15,
-      "answer": "2 of your 12 probes need attention:\n\n- **S-05**, Basin 2 pH: drift. +0.16 vs. its 7-day baseline, calibration due. Last calibrated Mon 02 Nov 19:55.\n- **S-10**, Basin 4 water temperature: stuck. Flat 26.0 °C for 3 h 35 min. Last calibrated Mon 09 Nov 19:55.",
+      "answer": "2 of your 12 probes need attention:\n\n- **S-05**, Basin 2 pH: drift. +0.13 vs. its 7-day baseline, calibration due. Last calibrated Mon 02 Nov 20:29.\n- **S-10**, Basin 4 water temperature: stuck. Flat 26.0 °C for 3 h 20 min. Last calibrated Mon 09 Nov 20:29.",
       "errors": []
     },
     {
@@ -555,7 +555,7 @@
       "lang_ok": true,
       "grounded": 6,
       "numbers": 6,
-      "answer": "Oxygen in **Basin 1** fell to **5.66 mg/L at 04:00**. Right now it is 7.99 mg/L (103% of saturation at 28.6 °C).\n\nThis is the normal night pattern: algae stop making oxygen after sunset but keep using it until dawn, so the low comes just before sunrise. The evening feed adds demand.\n\nIt stayed above the warning level, so no action is needed tonight.",
+      "answer": "Oxygen in **Basin 1** fell to **5.27 mg/L at 04:14**. Right now it is 7.46 mg/L (96% of saturation at 28.5 °C).\n\nThis is the normal night pattern: algae stop making oxygen after sunset but keep using it until dawn, so the low comes just before sunrise. The evening feed adds demand.\n\nIt stayed above the warning level, so no action is needed tonight.",
       "errors": []
     },
     {
@@ -575,7 +575,7 @@
       "lang_ok": true,
       "grounded": 9,
       "numbers": 9,
-      "answer": "The model gives **Basin 3** a **100% chance** of oxygen below 7.0 mg/L before 06:00 (local time) (estimate, model v1.3, computed Thu 19 Nov 20:10).\n\nIt looks mostly at last night's low, the water temperature and the feeding load. Current inputs: evening oxygen decline 0.28 mg/L per h; water temperature 17.9 °C; evening feed 31 kg.\n\nTreat it as an early warning, not a certainty: if it is high, cut the evening feed and plan to aerate tonight.",
+      "answer": "The model gives **Basin 3** a **100% chance** of oxygen below 7.0 mg/L before 06:00 (local time) (estimate, model v1.3, computed Thu 19 Nov 20:29).\n\nIt looks mostly at last night's low, the water temperature and the feeding load. Current inputs: evening oxygen decline 0.3 mg/L per h; water temperature 17.9 °C; evening feed 31 kg.\n\nTreat it as an early warning, not a certainty: if it is high, cut the evening feed and plan to aerate tonight.",
       "errors": []
     },
     {
@@ -594,9 +594,9 @@
       "approval_ok": true,
       "forbidden_ok": true,
       "lang_ok": true,
-      "grounded": 8,
-      "numbers": 8,
-      "answer": "Here is what needs you today:\n\n1. **Basin 3**: Oxygen below 7.0 mg/L (high) · Dissolved oxygen fell to 5.32 mg/L, under the 7.0 mg/L warning level for rainbow trout.\n2. **Basin 2**: pH above 8.5 (medium) · pH reached 8.74, above the 8.5 limit for Nile tilapia.",
+      "grounded": 4,
+      "numbers": 4,
+      "answer": "Here is what needs you today:\n\n1. **Basin 2**: pH above 8.5 (medium) · pH reached 8.72, above the 8.5 limit for Nile tilapia.",
       "errors": []
     },
     {
@@ -616,7 +616,7 @@
       "lang_ok": true,
       "grounded": 4,
       "numbers": 5,
-      "answer": "**Probably a sensor problem, not the water.** Probe S-10 (water temperature, Basin 4) is stuck: Flat 26.0 °C for 3 h 35 min. Real water never stays that flat.\n\nThis goes to the technician, not the worker on shift.",
+      "answer": "**Probably a sensor problem, not the water.** Probe S-10 (water temperature, Basin 4) is stuck: Flat 26.0 °C for 3 h 20 min. Real water never stays that flat.\n\nThis goes to the technician, not the worker on shift.",
       "errors": []
     },
     {
@@ -791,7 +791,7 @@
       "lang_ok": true,
       "grounded": 4,
       "numbers": 5,
-      "answer": "**Probably a sensor problem, not the water.** Probe S-10 (water temperature, Basin 4) is stuck: Flat 26.0 °C for 3 h 35 min. Real water never stays that flat.\n\nThis goes to the technician, not the worker on shift.",
+      "answer": "**Probably a sensor problem, not the water.** Probe S-10 (water temperature, Basin 4) is stuck: Flat 26.0 °C for 3 h 20 min. Real water never stays that flat.\n\nThis goes to the technician, not the worker on shift.",
       "errors": []
     },
     {
@@ -847,7 +847,7 @@
       "lang_ok": true,
       "grounded": 9,
       "numbers": 10,
-      "answer": "Dans **Basin 3**, l'oxygène est descendu à **5.32 mg/L à 04:14**, sous le seuil d'alerte de **7.0 mg/L** pour la rainbow trout. En ce moment il est à 7.62 mg/L (80 % de saturation à 17.7 °C).\n\nC'est le cycle normal de la nuit : les algues cessent de produire de l'oxygène après le coucher du soleil mais continuent d'en consommer jusqu'à l'aube. Le repas du soir augmente la demande, et la truite a besoin de plus d'oxygène que le tilapia ou la carpe.\n\n1. Réduisez d'un tiers le repas du soir dans Basin 3.\n2. Faites tourner l'aérateur de 22:00 jusqu'après le lever du soleil.\n3. Vérifiez à nouveau l",
+      "answer": "Dans **Basin 3**, l'oxygène est descendu à **5.25 mg/L à 03:24**, sous le seuil d'alerte de **7.0 mg/L** pour la rainbow trout. En ce moment il est à 7.56 mg/L (79 % de saturation à 17.9 °C).\n\nC'est le cycle normal de la nuit : les algues cessent de produire de l'oxygène après le coucher du soleil mais continuent d'en consommer jusqu'à l'aube. Le repas du soir augmente la demande, et la truite a besoin de plus d'oxygène que le tilapia ou la carpe.\n\n1. Réduisez d'un tiers le repas du soir dans Basin 3.\n2. Faites tourner l'aérateur de 22:00 jusqu'après le lever du soleil.\n3. Vérifiez à nouveau l",
       "errors": []
     },
     {
@@ -867,7 +867,7 @@
       "lang_ok": true,
       "grounded": 16,
       "numbers": 16,
-      "answer": "**Risque élevé dans l'ensemble.** Ce sont des estimations du modèle, pas des certitudes.\n\n- **Basin 3** (Rainbow trout): 100% chance of oxygen below 7.0 mg/L before 06:00 (local time)\n- **Basin 4** (Common carp): 47% chance of oxygen below 5.0 mg/L before 06:00 (local time)\n- **Basin 1** (Nile tilapia): 0% chance of oxygen below 5.0 mg/L before 06:00 (local time)\n- **Basin 2** (Nile tilapia): 0% chance of oxygen below 5.0 mg/L before 06:00 (local time)",
+      "answer": "**Risque élevé dans l'ensemble.** Ce sont des estimations du modèle, pas des certitudes.\n\n- **Basin 3** (Rainbow trout): 100% chance of oxygen below 7.0 mg/L before 06:00 (local time)\n- **Basin 4** (Common carp): 10% chance of oxygen below 5.0 mg/L before 06:00 (local time)\n- **Basin 1** (Nile tilapia): 1% chance of oxygen below 5.0 mg/L before 06:00 (local time)\n- **Basin 2** (Nile tilapia): 0% chance of oxygen below 5.0 mg/L before 06:00 (local time)",
       "errors": []
     },
     {
@@ -887,7 +887,7 @@
       "lang_ok": true,
       "grounded": 16,
       "numbers": 16,
-      "answer": "**المستوى العام: مرتفع.** هذه تقديرات من النموذج وليست يقينًا.\n\n- **Basin 3** (Rainbow trout): 100% chance of oxygen below 7.0 mg/L before 06:00 (local time)\n- **Basin 4** (Common carp): 47% chance of oxygen below 5.0 mg/L before 06:00 (local time)\n- **Basin 1** (Nile tilapia): 0% chance of oxygen below 5.0 mg/L before 06:00 (local time)\n- **Basin 2** (Nile tilapia): 0% chance of oxygen below 5.0 mg/L before 06:00 (local time)",
+      "answer": "**المستوى العام: مرتفع.** هذه تقديرات من النموذج وليست يقينًا.\n\n- **Basin 3** (Rainbow trout): 100% chance of oxygen below 7.0 mg/L before 06:00 (local time)\n- **Basin 4** (Common carp): 10% chance of oxygen below 5.0 mg/L before 06:00 (local time)\n- **Basin 1** (Nile tilapia): 1% chance of oxygen below 5.0 mg/L before 06:00 (local time)\n- **Basin 2** (Nile tilapia): 0% chance of oxygen below 5.0 mg/L before 06:00 (local time)",
       "errors": []
     },
     {
@@ -908,7 +908,7 @@
       "lang_ok": true,
       "grounded": 9,
       "numbers": 10,
-      "answer": "انخفض الأكسجين في **Basin 3** إلى **5.32 ملغ/لتر عند 04:14**، أي أقل من حد التحذير **7.0 ملغ/لتر**. القيمة الحالية 7.62 ملغ/لتر (80% من التشبع عند 17.7 °م).\n\nهذا هو النمط الليلي المعتاد: تتوقف الطحالب عن إنتاج الأكسجين بعد الغروب لكنها تستمر في استهلاكه حتى الفجر، فيأتي أدنى مستوى قبل الشروق. وجبة المساء تزيد الطلب، والسلمون المرقط يحتاج إلى أكسجين أكثر من البلطي والشبوط.\n\n1. خفّض وجبة المساء الليلة في Basin 3 بنحو الثلث.\n2. شغّل جهاز التهوية من 22:00 حتى بعد شروق الشمس.\n3. تحقق من القراءة مجددًا عند 05:00.",
+      "answer": "انخفض الأكسجين في **Basin 3** إلى **5.25 ملغ/لتر عند 03:24**، أي أقل من حد التحذير **7.0 ملغ/لتر**. القيمة الحالية 7.56 ملغ/لتر (79% من التشبع عند 17.9 °م).\n\nهذا هو النمط الليلي المعتاد: تتوقف الطحالب عن إنتاج الأكسجين بعد الغروب لكنها تستمر في استهلاكه حتى الفجر، فيأتي أدنى مستوى قبل الشروق. وجبة المساء تزيد الطلب، والسلمون المرقط يحتاج إلى أكسجين أكثر من البلطي والشبوط.\n\n1. خفّض وجبة المساء الليلة في Basin 3 بنحو الثلث.\n2. شغّل جهاز التهوية من 22:00 حتى بعد شروق الشمس.\n3. تحقق من القراءة مجددًا عند 05:00.",
       "errors": []
     }
   ]

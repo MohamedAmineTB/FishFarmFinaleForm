@@ -26,3 +26,34 @@ Choices made where the specifications left room, or where they had to be adapted
 14. **AI Ops in the owner menu.** The owner-only AI Ops page required by CHATBOT_UPGRADE.md §8 is a sixth item in the owner's menu (not in the reference screenshots).
 15. **"+ Add basin" on the Basins page** (owner only) so a farm can grow after its first basin.
 16. **Playwright 1.65.1**: 1.49 can't download browsers on Node 26.
+
+## Machine learning
+
+17. **Model version label.** The saved model is labelled `v1.3` to match the approved design; the label is stored with every prediction.
+18. **Reported honestly.** On the simulated farm a persistence baseline ("it dipped last night") scores slightly better than the
+    random forest. Both are reported in `ml/README.md`; the model is kept because its features generalise to real farms.
+
+## Assistant
+
+19. **Thinking off on Claude.** With an 800-token output limit, the Anthropic provider sends `thinking: {type: "disabled"}` so the
+    budget goes to the answer. A model refusal (`stop_reason: refusal`) is shown as a clear error.
+20. **Write tools end the turn.** When the model's only tool calls are write tools, the agent shows the approval cards and ends the turn
+    instead of calling the model again.
+21. **Briefing.** The overview's "Today's actions" are computed live from the briefing service (cheap and always current); the
+    assistant's `get_farm_briefing` caches one briefing per farm and day in `briefings`, with `?refresh=true` to rebuild it.
+22. **Proactive insight.** The prediction-driven insight is the first of "Today's actions" ("Cut the Basin 3 evening feed… 62 %
+    chance … (estimate)"), so the overview layout stays as approved.
+23. **Embeddings.** The default is a deterministic hashing embedder (word + character-trigram feature hashing, 384 dimensions):
+    no download, small image, multilingual enough for the short corpus (hit@4 = 1.00). A multilingual sentence-transformers model
+    is supported with `EMBEDDING_BACKEND=sentence_transformers` but not installed in the image by default (it adds about 1.5 GB).
+24. **DeepEval / RAGAS not used.** The deterministic metrics (tool correctness, hit@k, MRR, refusals, approvals, grounding) are
+    implemented in `app/assistant/evals.py` in a few lines with the same definitions, which avoids a heavy dependency in CI.
+    Model-judged faithfulness and relevancy need an API key and are not part of CI.
+25. **Conversation summary.** Older turns are summarised deterministically (the list of earlier questions) once a conversation
+    has more than 16 messages; the last 16 messages are sent in full.
+26. **Not built:** the optional `run_readonly_query(sql)` analytics tool (a free-form SQL tool weakens the "trusted tools only"
+    design for little demo value) and the optional "Deep analysis" model toggle. Langfuse tracing is not wired; every request is
+    already logged in `llm_requests` and shown on the AI Ops page.
+27. **PDF export** uses the browser's print dialog with a print stylesheet that keeps only the conversation (no extra PDF library).
+28. **Workers and the assistant.** Workers and technicians get a limited assistant: no financial tools, alerts filtered by role, and
+    workers cannot create tasks.
