@@ -104,6 +104,31 @@ def today(ctx: Ctx = Depends(current_ctx), db: Session = Depends(get_db)):
     return out
 
 
+@router.get("/public/showcase")
+def showcase(db: Session = Depends(get_db)):
+    """Public data for the website: live readings and the Basin 3 oxygen curve of the demo farm."""
+    from ..models import User
+    from ..services.views import basins_with_sensors, overnight_low, series_24h
+
+    owner = db.scalar(select(User).where(User.email == "nadia@lacvert.farm"))
+    if not owner:
+        return {"available": False}
+    bs = {b.name: s for b, s in basins_with_sensors(db, owner.id)}
+
+    def val(basin: str, m: str):
+        s = bs.get(basin, {}).get(m)
+        return s.last_value if s else None
+
+    out = {"available": True, "do": val("Basin 3", "do"), "temp": val("Basin 1", "temp"), "ph": val("Basin 2", "ph")}
+    s3 = bs.get("Basin 3", {}).get("do")
+    if s3:
+        series = series_24h(db, s3)
+        out["series"] = series
+        out["low"] = overnight_low(series)
+        out["warn"] = s3.min_value
+    return out
+
+
 @router.get("/simulator")
 def simulator_state(ctx: Ctx = Depends(current_ctx), db: Session = Depends(get_db)):
     return {"paused": _sim_paused(db, ctx)}
