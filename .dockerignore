@@ -1,0 +1,11 @@
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/.env
+frontend/dist
+frontend/test-results
+frontend/playwright-report
+docs/
+.git
+ml/artifacts/*.joblib

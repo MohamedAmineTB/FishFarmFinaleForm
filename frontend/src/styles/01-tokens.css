@@ -1,0 +1,32 @@
+/* Design tokens and base rules. Ported unchanged from docs/design-reference.html (lines 12-42). */
+/* Layout idea: a bright surface world on top, the basin's water underneath —
+   every section dives a little deeper, ending in the pre-dawn night shift. */
+:root{
+  --ink:#0c1d22;          /* deep-water text */
+  --deep:#0f3a42;         /* basin floor, primary buttons */
+  --current:#1d6f6a;      /* teal accent */
+  --reed:#8dbb63;         /* reed green, 3rd step */
+  --aqua:#cfe8e1;         /* ticket cards, footer */
+  --foam:#eef6f3;         /* soft surfaces */
+  --line:#e2ebe7;
+  --paper:#ffffff;
+  --bg:#e4efeb;
+  --muted:#4f6268;
+  --ok:#2e9b6f; --warn:#d98a1c; --crit:#d6453d;
+  --display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body:"Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono:"Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius:22px;
+  color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg)}
+html.lenis, html.lenis body{height:auto}
+.lenis.lenis-smooth{scroll-behavior:auto!important}
+body{font-family:var(--body);color:var(--ink);background:var(--bg);overflow-x:hidden;-webkit-font-smoothing:antialiased;line-height:1.45}
+img,svg,canvas{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--current);outline-offset:3px;border-radius:6px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance}
+

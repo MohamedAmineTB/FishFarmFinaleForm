@@ -1,0 +1,39 @@
+/* Additions for the real application. Same tokens and components as the prototype. */
+
+/* the React root fills the page like the prototype's body */
+#root { min-height: 100%; }
+
+/* "Add your first basin" empty state of a new farm */
+.first-basin { display: grid; justify-items: center; gap: 12px; padding: 56px 20px; text-align: center; color: var(--muted); }
+.first-basin strong { font-family: var(--display); font-size: 28px; font-weight: 400; color: var(--ink); letter-spacing: -.035em; }
+.first-basin .row { justify-content: center; }
+
+/* errors loading a page */
+.load-err { padding: 14px 16px; border-radius: 14px; background: #fbe3e1; color: #8e2a24; font-size: 13px; }
+
+/* assistant extras: stop button, emergency banner, error, language direction */
+.ai-input .small-btn.stop { background: var(--crit); color: #fff; box-shadow: none; }
+.emergency { margin: 12px 18px 0; padding: 10px 12px; border-radius: 12px; background: #fbe3e1; color: #8e2a24; font-size: 12.5px; display: grid; gap: 6px; }
+.emergency b { color: #8e2a24; }
+.emergency ol { padding-left: 18px; display: grid; gap: 2px; }
+.ai-err { padding: 9px 12px; border-radius: 10px; background: #fbe3e1; color: #8e2a24; font-size: 12.5px; }
+.msg-ai[dir="rtl"], .msg-user[dir="rtl"] { text-align: right; }
+.msg-ai[dir="rtl"] ul, .msg-ai[dir="rtl"] ol { padding-left: 0; padding-right: 18px; }
+.ai-hist { display: grid; gap: 4px; }
+.ai-hist button { text-align: left; font-size: 12.5px; padding: 7px 10px; border-radius: 10px; color: var(--deep); }
+.ai-hist button:hover { background: var(--foam); }
+.ai-hist span { color: var(--muted); font-size: 11px; margin-left: 6px; }
+.fb-reason { display: flex; gap: 6px; flex-wrap: wrap; }
+.fb-reason input { flex: 1; min-width: 140px; font: inherit; font-size: 12.5px; border: 1px solid #d5e1dd; border-radius: 9px; padding: 5px 9px; }
+
+/* AI Ops page */
+.ops-kpis .v small { font-size: 12px; }
+.bar-list { display: grid; gap: 8px; }
+.bar-list div { display: grid; grid-template-columns: 160px 1fr 54px; gap: 10px; align-items: center; font-size: 12.5px; }
+.bar-list i { display: block; height: 8px; border-radius: 999px; background: var(--current); }
+
+@media print {
+  html.in-app .app, .ai-head, .ai-input, .demo-banner, .chips, .fb, .approve .row { display: none !important; }
+  .panel-ai { position: static !important; transform: none !important; visibility: visible !important; width: auto !important; box-shadow: none !important; }
+  .ai-body { overflow: visible !important; }
+}

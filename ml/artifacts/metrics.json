@@ -1,0 +1,54 @@
+{
+  "model_version": "v1.3",
+  "trained_at": "2026-11-19T18:52:27.584913+00:00",
+  "samples": {
+    "train": 2080,
+    "test": 696,
+    "positive_rate": 0.298
+  },
+  "split": "by time: train before 2026-11-11 22:45 UTC, test after",
+  "model": {
+    "precision": 0.892,
+    "recall": 1.0,
+    "f1": 0.943,
+    "accuracy": 0.97,
+    "confusion_matrix": {
+      "tn": 501,
+      "fp": 21,
+      "fn": 0,
+      "tp": 174
+    },
+    "roc_auc": 1.0
+  },
+  "baseline_last_24h_dip": {
+    "precision": 0.978,
+    "recall": 1.0,
+    "f1": 0.989,
+    "accuracy": 0.994,
+    "confusion_matrix": {
+      "tn": 518,
+      "fp": 4,
+      "fn": 0,
+      "tp": 174
+    }
+  },
+  "feature_importance": {
+    "do_min_24h_gap": 0.33,
+    "temp_now": 0.32,
+    "feed_kg_per_m3": 0.172,
+    "ph_now": 0.064,
+    "do_gap": 0.042,
+    "do_std_6h": 0.021,
+    "do_now": 0.019,
+    "do_mean_6h": 0.016,
+    "do_decline_3h": 0.012,
+    "hour_sin": 0.002,
+    "hour_cos": 0.002
+  },
+  "per_basin_test_positive_rate": {
+    "Basin 1": 0.0,
+    "Basin 2": 0.0,
+    "Basin 3": 1.0,
+    "Basin 4": 0.0
+  }
+}

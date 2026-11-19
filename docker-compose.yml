@@ -1,0 +1,54 @@
+# FishFarm: docker compose up  ->  http://localhost:8080
+# Works with no API key (the assistant runs in demo mode). Put ANTHROPIC_API_KEY in .env for real answers.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: fishfarm
+      POSTGRES_PASSWORD: fishfarm
+      POSTGRES_DB: fishfarm
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fishfarm -d fishfarm"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: { context: ., dockerfile: backend/Dockerfile }
+    command: ["api"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg://fishfarm:fishfarm@db:5432/fishfarm
+      CORS_ORIGINS: http://localhost:8080
+    depends_on:
+      db: { condition: service_healthy }
+    ports: ["8000:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  pipeline:
+    build: { context: ., dockerfile: backend/Dockerfile }
+    command: ["pipeline"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg://fishfarm:fishfarm@db:5432/fishfarm
+    depends_on:
+      api: { condition: service_healthy }
+
+  frontend:
+    build: { context: frontend }
+    depends_on:
+      api: { condition: service_healthy }
+    ports: ["8080:80"]
+
+volumes:
+  db-data:
