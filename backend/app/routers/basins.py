@@ -21,6 +21,7 @@ from ..services.views import (
     latest_predictions,
     live_basins,
     overnight_low,
+    role_alert_kind,
     series_24h,
 )
 
@@ -73,7 +74,7 @@ def basin_detail(basin_id: uuid.UUID, ctx: Ctx = Depends(require_perm("basins"))
     out["probes"] = [{"id": str(s.id), "code": s.code, "metric": m, "label": METRIC_INFO[m]["label"],
                       "health": s.health, "note": s.health_note}
                      for m, s in sorted(sensors.items(), key=lambda kv: kv[1].code)]
-    out["alerts"] = alerts_for(db, ctx.owner_id, basin_id=b.id)[:4]
+    out["alerts"] = alerts_for(db, ctx.owner_id, basin_id=b.id, kind=role_alert_kind(ctx.role))[:4]
     return out
 
 
