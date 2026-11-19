@@ -37,7 +37,8 @@ export default function Team() {
       await api(`/api/team/${m.id}/permissions`, { method: 'PATCH', body: { permissions: { [k]: on } } });
       toast(
         <>
-          <b>Saved</b> · {m.name} {on ? 'can now' : 'can no longer'} see {PERMS.find((p) => p[0] === k)![1].toLowerCase()}
+          <b>Saved</b> · {m.name} {on ? 'can now' : 'can no longer'} see{' '}
+          {PERMS.find((p) => p[0] === k)![1].toLowerCase()}
         </>,
       );
     } catch (e) {
@@ -80,7 +81,9 @@ export default function Team() {
                       </span>
                     </td>
                     <td>
-                      <span className={`badge ${t.role === 'worker' ? 'b-healthy' : 'b-info'}`}>{roleLabel(t.role)}</span>
+                      <span className={`badge ${t.role === 'worker' ? 'b-healthy' : 'b-info'}`}>
+                        {roleLabel(t.role)}
+                      </span>
                     </td>
                     <td className="mono">
                       {t.shift_start}–{t.shift_end}
@@ -105,20 +108,33 @@ export default function Team() {
             </table>
           </div>
         ) : (
-          <p className="mini">No team members yet. Add your workers and technicians: they sign in on the team sign-in page.</p>
+          <p className="mini">
+            No team members yet. Add your workers and technicians: they sign in on the team sign-in page.
+          </p>
         )}
-        <span className="mini">Changes apply right away: the member's menu updates instantly, even if they are signed in.</span>
+        <span className="mini">
+          Changes apply right away: the member's menu updates instantly, even if they are signed in.
+        </span>
       </div>
 
       <Sheet open={adding} onClose={() => setAdding(false)} label="Add a team member">
         <h3>Add a team member</h3>
-        <p className="mini">We create their account now. They sign in on the team sign-in page with this email and password.</p>
+        <p className="mini">
+          We create their account now. They sign in on the team sign-in page with this email and password.
+        </p>
         <ValidatedForm
           setError={(fn) => setSetErr(() => fn)}
           onValid={async (d) => {
             try {
               await api('/api/team', {
-                body: { name: d.name.trim(), email: d.email.trim().toLowerCase(), password: d.pass, role: d.role.toLowerCase(), shift_start: d.s, shift_end: d.e },
+                body: {
+                  name: d.name.trim(),
+                  email: d.email.trim().toLowerCase(),
+                  password: d.pass,
+                  role: d.role.toLowerCase(),
+                  shift_start: d.s,
+                  shift_end: d.e,
+                },
               });
               setAdding(false);
               toast(
@@ -128,14 +144,23 @@ export default function Team() {
               );
               reload();
             } catch (e) {
-              if (e instanceof ApiError && e.code === 'email_taken') setErr?.('email', 'This email already has an account.');
+              if (e instanceof ApiError && e.code === 'email_taken')
+                setErr?.('email', 'This email already has an account.');
               else toast(<>{(e as Error).message}</>);
             }
           }}
         >
           <Field id="mName" name="name" label="Full name" rule={{ required: true }} />
           <Field id="mEmail" name="email" label="Email" type="email" rule={{ required: true, email: true }} />
-          <Field id="mPass" name="pass" label="Temporary password" type="text" rule={{ required: true, min: 8 }} defaultValue={tempPass} key={tempPass} />
+          <Field
+            id="mPass"
+            name="pass"
+            label="Temporary password"
+            type="text"
+            rule={{ required: true, min: 8 }}
+            defaultValue={tempPass}
+            key={tempPass}
+          />
           <label className="field" htmlFor="mRole">
             Role
             <select id="mRole" name="role">
@@ -184,7 +209,14 @@ export default function Team() {
                     <b>{l}</b>
                     <span>{d}</span>
                   </div>
-                  <button className="switch" type="button" role="switch" aria-checked={!!member.permissions[k]} aria-label={l} onClick={() => flip(member, k)} />
+                  <button
+                    className="switch"
+                    type="button"
+                    role="switch"
+                    aria-checked={!!member.permissions[k]}
+                    aria-label={l}
+                    onClick={() => flip(member, k)}
+                  />
                 </div>
               ))}
             </div>

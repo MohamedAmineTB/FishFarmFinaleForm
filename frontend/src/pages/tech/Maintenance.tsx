@@ -34,7 +34,9 @@ export default function Maintenance() {
           onValid={async (d) => {
             setErr('');
             try {
-              await api('/api/maintenance', { body: { sensor_id: d.sensor, work_type: d.type, due_date: d.due, description: d.desc.trim() } });
+              await api('/api/maintenance', {
+                body: { sensor_id: d.sensor, work_type: d.type, due_date: d.due, description: d.desc.trim() },
+              });
               toast(
                 <>
                   <b>Logged</b> · visible in the owner's reports
@@ -68,7 +70,14 @@ export default function Maintenance() {
             </label>
             <Field id="mtDue" name="due" label="Due date" type="date" rule={{ required: true }} />
           </div>
-          <Field id="mtDesc" name="desc" textarea label="Description" rule={{ required: true }} placeholder="What you did and what you measured" />
+          <Field
+            id="mtDesc"
+            name="desc"
+            textarea
+            label="Description"
+            rule={{ required: true }}
+            placeholder="What you did and what you measured"
+          />
           {err && <div className="form-err">{err}</div>}
           <button className="small-btn primary" style={{ justifySelf: 'start' }} type="submit">
             Save log

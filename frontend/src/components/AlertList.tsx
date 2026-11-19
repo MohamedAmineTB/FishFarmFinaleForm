@@ -15,7 +15,10 @@ function AlertItem({ a, justDone, onCheck }: { a: Alert; justDone: string | null
   const done = a.resolved || justDone !== null;
   const who = a.kind === 'sensor' ? 'the technician' : 'the worker on shift';
   return (
-    <div className={`alert sev-${a.severity}${done ? ' done' : ''}${justDone !== null ? ' just-done' : ''}`} data-aid={a.id}>
+    <div
+      className={`alert sev-${a.severity}${done ? ' done' : ''}${justDone !== null ? ' just-done' : ''}`}
+      data-aid={a.id}
+    >
       <span className="stripe" />
       <button
         className={`check${done ? ' on' : ''}`}
@@ -83,7 +86,9 @@ export function AlertList({ alerts, onChanged, empty }: { alerts: Alert[]; onCha
   const sensor = resolving?.kind === 'sensor';
   return (
     <>
-      {rows.length ? rows.map((a) => <AlertItem key={a.id} a={a} justDone={just[a.id] ?? null} onCheck={onCheck} />) : empty}
+      {rows.length
+        ? rows.map((a) => <AlertItem key={a.id} a={a} justDone={just[a.id] ?? null} onCheck={onCheck} />)
+        : empty}
       <Modal open={!!resolving} onClose={() => setResolving(null)} label="Resolve alert">
         {resolving && (
           <>

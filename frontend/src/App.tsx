@@ -106,21 +106,98 @@ export default function App() {
               </Route>
               <Route path="/worker" element={<AppLayout role="worker" />}>
                 <Route index element={<WorkerToday />} />
-                <Route path="alerts" element={<Need perm="alerts"><Alerts /></Need>} />
-                <Route path="report" element={<Need perm="reports"><ShiftReport /></Need>} />
-                <Route path="sensors" element={<Need perm="sensors"><SensorHealth /></Need>} />
-                <Route path="maintenance" element={<Need perm="maintenance"><Maintenance /></Need>} />
-                <Route path="basins/:id" element={<Need perm="basins"><BasinDetail /></Need>} />
+                <Route
+                  path="alerts"
+                  element={
+                    <Need perm="alerts">
+                      <Alerts />
+                    </Need>
+                  }
+                />
+                <Route
+                  path="report"
+                  element={
+                    <Need perm="reports">
+                      <ShiftReport />
+                    </Need>
+                  }
+                />
+                <Route
+                  path="sensors"
+                  element={
+                    <Need perm="sensors">
+                      <SensorHealth />
+                    </Need>
+                  }
+                />
+                <Route
+                  path="maintenance"
+                  element={
+                    <Need perm="maintenance">
+                      <Maintenance />
+                    </Need>
+                  }
+                />
+                <Route
+                  path="basins/:id"
+                  element={
+                    <Need perm="basins">
+                      <BasinDetail />
+                    </Need>
+                  }
+                />
                 <Route path="none" element={<NoPages />} />
               </Route>
               <Route path="/technician" element={<AppLayout role="technician" />}>
                 <Route index element={<TechToday />} />
-                <Route path="alerts" element={<Need perm="alerts"><Alerts /></Need>} />
-                <Route path="sensors" element={<Need perm="sensors"><SensorHealth /></Need>} />
-                <Route path="maintenance" element={<Need perm="maintenance"><Maintenance /></Need>} />
-                <Route path="basins" element={<Need perm="basins"><Basins /></Need>} />
-                <Route path="basins/:id" element={<Need perm="basins"><BasinDetail /></Need>} />
-                <Route path="report" element={<Need perm="reports"><ShiftReport /></Need>} />
+                <Route
+                  path="alerts"
+                  element={
+                    <Need perm="alerts">
+                      <Alerts />
+                    </Need>
+                  }
+                />
+                <Route
+                  path="sensors"
+                  element={
+                    <Need perm="sensors">
+                      <SensorHealth />
+                    </Need>
+                  }
+                />
+                <Route
+                  path="maintenance"
+                  element={
+                    <Need perm="maintenance">
+                      <Maintenance />
+                    </Need>
+                  }
+                />
+                <Route
+                  path="basins"
+                  element={
+                    <Need perm="basins">
+                      <Basins />
+                    </Need>
+                  }
+                />
+                <Route
+                  path="basins/:id"
+                  element={
+                    <Need perm="basins">
+                      <BasinDetail />
+                    </Need>
+                  }
+                />
+                <Route
+                  path="report"
+                  element={
+                    <Need perm="reports">
+                      <ShiftReport />
+                    </Need>
+                  }
+                />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

@@ -8,7 +8,8 @@ export const setFarmTz = (tz: string) => {
 export const getFarmTz = () => farmTz;
 
 export const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
-export const fmt = (v: number | null | undefined, d: number) => (v == null || Number.isNaN(v) ? '–' : Number(v).toFixed(d));
+export const fmt = (v: number | null | undefined, d: number) =>
+  v == null || Number.isNaN(v) ? '–' : Number(v).toFixed(d);
 export const eur = (n: number) => '€' + Math.round(n).toLocaleString('en-US');
 export const initials = (n: string) =>
   n
@@ -54,7 +55,8 @@ export const METRIC = {
 
 export const ROLE_LABEL = { owner: 'Owner', worker: 'Worker', technician: 'Technician' } as const;
 
-export const stColor = (st: string) => (st === 'critical' ? 'var(--crit)' : st === 'warning' ? 'var(--warn)' : 'var(--ok)');
+export const stColor = (st: string) =>
+  st === 'critical' ? 'var(--crit)' : st === 'warning' ? 'var(--warn)' : 'var(--ok)';
 export const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
 export function shiftInfo(shift: { start: string; end: string } | null) {

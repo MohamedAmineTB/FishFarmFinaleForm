@@ -27,7 +27,10 @@ function AuthLayout({ quote, children }: { quote: ReactNode; children: ReactNode
   return (
     <div className="auth" id="auth">
       <div className="auth-art">
-        <WaterCanvas id="authCanvas" opts={{ palette: 'dark', fish: 22, top: 0.05, scale: 1.2, aerators: [0.2, 0.7] }} />
+        <WaterCanvas
+          id="authCanvas"
+          opts={{ palette: 'dark', fish: 22, top: 0.05, scale: 1.2, aerators: [0.2, 0.7] }}
+        />
         <Link className="brand" to="/" aria-label="Back to the FishFarm website">
           <BrandSvg eye="#0c3038" />
           fishfarm
@@ -67,7 +70,10 @@ function useFill() {
     const f = document.querySelector('#authCard form') as HTMLFormElement | null;
     if (!f) return;
     // set the values and fire input events so the validation state clears like after typing
-    for (const [name, value] of [['email', email], ['pass', 'demo1234']]) {
+    for (const [name, value] of [
+      ['email', email],
+      ['pass', 'demo1234'],
+    ]) {
       const input = f.elements.namedItem(name) as HTMLInputElement;
       input.value = value;
       input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -99,7 +105,11 @@ export function OwnerAuth() {
 
   useEffect(() => {
     setErr(null);
-    window.setTimeout(() => (first.current?.querySelector('input') as HTMLInputElement | null)?.focus({ preventScroll: true }), 50);
+    window.setTimeout(() => {
+      // move focus to the first field only if the user isn't already typing somewhere
+      if (document.activeElement?.tagName === 'INPUT') return;
+      (first.current?.querySelector('input') as HTMLInputElement | null)?.focus({ preventScroll: true });
+    }, 50);
   }, [sub]);
 
   return (
@@ -115,7 +125,11 @@ export function OwnerAuth() {
         Farm owners
       </span>
       <h1>{reg ? 'Create your farm' : 'Welcome back'}</h1>
-      <p className="lead">{reg ? 'Set up your farm in a minute. You add your workers and technicians afterwards.' : 'Sign in to see every basin, alert and report on your farm.'}</p>
+      <p className="lead">
+        {reg
+          ? 'Set up your farm in a minute. You add your workers and technicians afterwards.'
+          : 'Sign in to see every basin, alert and report on your farm.'}
+      </p>
       <div className="seg" role="tablist">
         <button type="button" role="tab" aria-selected={!reg} onClick={() => setSub('signin')}>
           Sign in
@@ -132,7 +146,14 @@ export function OwnerAuth() {
               setBusy(true);
               setErr(null);
               try {
-                await register({ name: d.name.trim(), email: d.email.trim().toLowerCase(), password: d.pass, farm: d.farm.trim(), company: d.company.trim(), country: d.country });
+                await register({
+                  name: d.name.trim(),
+                  email: d.email.trim().toLowerCase(),
+                  password: d.pass,
+                  farm: d.farm.trim(),
+                  company: d.company.trim(),
+                  country: d.country,
+                });
                 toast(
                   <>
                     <b>Farm created</b> · welcome to {d.farm.trim()}
@@ -157,8 +178,26 @@ export function OwnerAuth() {
             }}
           >
             <Field id="rName" name="name" label="Your name" rule={{ required: true }} autoComplete="name" />
-            <Field id="rEmail" name="email" label="Email" type="email" rule={{ required: true, email: true }} autoComplete="email" />
-            <Field id="rPass" name="pass" password label={<>Password <span className="mini">(at least 8 characters)</span></>} rule={{ required: true, min: 8 }} autoComplete="new-password" />
+            <Field
+              id="rEmail"
+              name="email"
+              label="Email"
+              type="email"
+              rule={{ required: true, email: true }}
+              autoComplete="email"
+            />
+            <Field
+              id="rPass"
+              name="pass"
+              password
+              label={
+                <>
+                  Password <span className="mini">(at least 8 characters)</span>
+                </>
+              }
+              rule={{ required: true, min: 8 }}
+              autoComplete="new-password"
+            />
             <Field id="rFarm" name="farm" label="Farm name" rule={{ required: true }} placeholder="Lac Vert" />
             <div className="two">
               <Field id="rCo" name="company" label="Company name" rule={{ required: true }} />
@@ -171,11 +210,17 @@ export function OwnerAuth() {
                 </select>
               </label>
             </div>
-            {err && <div className="form-err" id="rErr">{err}</div>}
+            {err && (
+              <div className="form-err" id="rErr">
+                {err}
+              </div>
+            )}
             <button className="btn wide" type="submit" disabled={busy}>
               Create farm
             </button>
-            <p className="mini">Your farm starts empty. Add your first basin, or load the demo farm to explore right away.</p>
+            <p className="mini">
+              Your farm starts empty. Add your first basin, or load the demo farm to explore right away.
+            </p>
           </ValidatedForm>
         ) : (
           <ValidatedForm
@@ -199,9 +244,27 @@ export function OwnerAuth() {
               }
             }}
           >
-            <Field id="oEmail" name="email" label="Email" type="email" rule={{ required: true, email: true }} autoComplete="username" />
-            <Field id="oPass" name="pass" password label="Password" rule={{ required: true }} autoComplete="current-password" />
-            {err && <div className="form-err" id="oErr">{err}</div>}
+            <Field
+              id="oEmail"
+              name="email"
+              label="Email"
+              type="email"
+              rule={{ required: true, email: true }}
+              autoComplete="username"
+            />
+            <Field
+              id="oPass"
+              name="pass"
+              password
+              label="Password"
+              rule={{ required: true }}
+              autoComplete="current-password"
+            />
+            {err && (
+              <div className="form-err" id="oErr">
+                {err}
+              </div>
+            )}
             <button className="btn wide" type="submit" disabled={busy}>
               Sign in
             </button>
@@ -234,7 +297,10 @@ export function TeamAuth() {
   const after = useAfterSignIn();
   const fill = useFill();
   useEffect(() => {
-    window.setTimeout(() => (document.querySelector('#authCard input') as HTMLInputElement | null)?.focus({ preventScroll: true }), 50);
+    window.setTimeout(() => {
+      if (document.activeElement?.tagName === 'INPUT') return;
+      (document.querySelector('#authCard input') as HTMLInputElement | null)?.focus({ preventScroll: true });
+    }, 50);
   }, []);
   return (
     <AuthLayout
@@ -249,7 +315,9 @@ export function TeamAuth() {
         Workers and technicians
       </span>
       <h1>Team sign in</h1>
-      <p className="lead">Use the account your farm owner created for you. You'll see the pages they gave you access to.</p>
+      <p className="lead">
+        Use the account your farm owner created for you. You'll see the pages they gave you access to.
+      </p>
       <ValidatedForm
         onValid={async (d) => {
           setBusy(true);
@@ -270,9 +338,27 @@ export function TeamAuth() {
           }
         }}
       >
-        <Field id="tEmail" name="email" label="Work email" type="email" rule={{ required: true, email: true }} autoComplete="username" />
-        <Field id="tPass" name="pass" password label="Password" rule={{ required: true }} autoComplete="current-password" />
-        {err && <div className="form-err" id="tErr">{err}</div>}
+        <Field
+          id="tEmail"
+          name="email"
+          label="Work email"
+          type="email"
+          rule={{ required: true, email: true }}
+          autoComplete="username"
+        />
+        <Field
+          id="tPass"
+          name="pass"
+          password
+          label="Password"
+          rule={{ required: true }}
+          autoComplete="current-password"
+        />
+        {err && (
+          <div className="form-err" id="tErr">
+            {err}
+          </div>
+        )}
         <button className="btn wide" type="submit" disabled={busy}>
           Sign in
         </button>

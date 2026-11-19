@@ -19,12 +19,22 @@ export function AddBasinSheet({ open, onClose, onDone }: { open: boolean; onClos
   return (
     <Sheet open={open} onClose={onClose} label="Add a basin">
       <h3>Add a basin</h3>
-      <p className="mini">We create three probes for it (temperature, pH and dissolved oxygen) with the safe ranges of the species. Readings start within a few seconds.</p>
+      <p className="mini">
+        We create three probes for it (temperature, pH and dissolved oxygen) with the safe ranges of the species.
+        Readings start within a few seconds.
+      </p>
       <ValidatedForm
         onValid={async (d) => {
           setErr('');
           try {
-            await api('/api/basins', { body: { name: d.name.trim(), species: d.species, capacity: Number(d.capacity), fish_count: Number(d.fish) } });
+            await api('/api/basins', {
+              body: {
+                name: d.name.trim(),
+                species: d.species,
+                capacity: Number(d.capacity),
+                fish_count: Number(d.fish),
+              },
+            });
             toast(
               <>
                 <b>Basin added</b> · {d.name.trim()}
@@ -74,7 +84,16 @@ export function FirstBasin({ onChange }: { onChange: () => void }) {
   return (
     <div className="tile first-basin">
       <span className="big-check" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          width="28"
+          height="28"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M3 9c3 2 6 2 9 0s6-2 9 0M3 14c3 2 6 2 9 0s6-2 9 0M3 19c3 2 6 2 9 0s6-2 9 0" />
         </svg>
       </span>

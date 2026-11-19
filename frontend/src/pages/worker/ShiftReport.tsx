@@ -29,7 +29,9 @@ export default function ShiftReport() {
           onValid={async (d) => {
             setErr('');
             try {
-              await api('/api/reports', { body: { title: d.title.trim(), body: d.body.trim(), basin_id: d.basin || null } });
+              await api('/api/reports', {
+                body: { title: d.title.trim(), body: d.body.trim(), basin_id: d.basin || null },
+              });
               toast(
                 <>
                   <b>Sent</b> · your report is in the owner's inbox
@@ -42,7 +44,13 @@ export default function ShiftReport() {
             }
           }}
         >
-          <Field id="srTitle" name="title" label="Report title" rule={{ required: true }} placeholder="Morning shift: Basin 3 feeding" />
+          <Field
+            id="srTitle"
+            name="title"
+            label="Report title"
+            rule={{ required: true }}
+            placeholder="Morning shift: Basin 3 feeding"
+          />
           <label className="field" htmlFor="srBasin">
             Basin
             <select id="srBasin" name="basin" defaultValue={preset}>
@@ -54,7 +62,14 @@ export default function ShiftReport() {
               ))}
             </select>
           </label>
-          <Field id="srBody" name="body" textarea label="What did you see?" rule={{ required: true }} placeholder="Fish behaviour, feeding, water colour, equipment…" />
+          <Field
+            id="srBody"
+            name="body"
+            textarea
+            label="What did you see?"
+            rule={{ required: true }}
+            placeholder="Fish behaviour, feeding, water colour, equipment…"
+          />
           {err && <div className="form-err">{err}</div>}
           <button className="small-btn primary" style={{ justifySelf: 'start' }} type="submit">
             Send report

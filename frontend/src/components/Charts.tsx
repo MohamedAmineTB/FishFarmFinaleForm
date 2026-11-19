@@ -51,7 +51,14 @@ export function LineChart(o: LineChartProps) {
     const below = o.dir !== 'above';
     warn = (
       <>
-        <rect x={pl} y={below ? yy : pt} width={W - pl - pr} height={below ? H - pb - yy : yy - pt} fill="#d98a1c" opacity=".07" />
+        <rect
+          x={pl}
+          y={below ? yy : pt}
+          width={W - pl - pr}
+          height={below ? H - pb - yy : yy - pt}
+          fill="#d98a1c"
+          opacity=".07"
+        />
         <line x1={pl} x2={W - pr} y1={yy} y2={yy} stroke="#d98a1c" strokeDasharray="4 4" />
         <text x={W - pr} y={yy - 5} textAnchor="end" style={{ fill: '#a5650d' }}>
           warning {fmt(o.warn, dec)}
@@ -115,7 +122,13 @@ export function Spark({ values, color }: { values: number[]; color: string }) {
   const mx = Math.max(...values);
   const r = mx - mn || 1;
   const d = values
-    .map((v, i) => (i ? 'L' : 'M') + ((W * i) / (values.length - 1)).toFixed(1) + ' ' + (3 + (H - 6) * (1 - (v - mn) / r)).toFixed(1))
+    .map(
+      (v, i) =>
+        (i ? 'L' : 'M') +
+        ((W * i) / (values.length - 1)).toFixed(1) +
+        ' ' +
+        (3 + (H - 6) * (1 - (v - mn) / r)).toFixed(1),
+    )
     .join('');
   return (
     <svg className="spark" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
@@ -153,12 +166,30 @@ export function BarChart({ basins }: { basins: { name: string; revenue: number; 
         const bw = cw * 0.28;
         return (
           <g key={b.name}>
-            <rect x={x0} y={y(b.revenue)} width={bw} height={H - pb - y(b.revenue)} rx="4" fill="#1d6f6a" className="grow" style={{ animationDelay: `${i * 0.08}s` }}>
+            <rect
+              x={x0}
+              y={y(b.revenue)}
+              width={bw}
+              height={H - pb - y(b.revenue)}
+              rx="4"
+              fill="#1d6f6a"
+              className="grow"
+              style={{ animationDelay: `${i * 0.08}s` }}
+            >
               <title>
                 {b.name} revenue {eur(b.revenue)}
               </title>
             </rect>
-            <rect x={x0 + bw + 4} y={y(b.costs)} width={bw} height={H - pb - y(b.costs)} rx="4" fill="#9cc9bf" className="grow" style={{ animationDelay: `${i * 0.08 + 0.04}s` }}>
+            <rect
+              x={x0 + bw + 4}
+              y={y(b.costs)}
+              width={bw}
+              height={H - pb - y(b.costs)}
+              rx="4"
+              fill="#9cc9bf"
+              className="grow"
+              style={{ animationDelay: `${i * 0.08 + 0.04}s` }}
+            >
               <title>
                 {b.name} costs {eur(b.costs)}
               </title>
@@ -176,7 +207,12 @@ export function BarChart({ basins }: { basins: { name: string; revenue: number; 
 const CHART_RANGE: Record<Metric, [number, number, number]> = { do: [3, 10, 2], temp: [14, 32, 1], ph: [6.5, 9, 2] };
 
 /** The basin chart of the prototype (basinChart): range, warning line, overnight-low marker. */
-export function basinChartProps(b: Basin, m: Metric, series: { times: string[]; values: number[] }, h = 230): LineChartProps {
+export function basinChartProps(
+  b: Basin,
+  m: Metric,
+  series: { times: string[]; values: number[] },
+  h = 230,
+): LineChartProps {
   const t = b.thr;
   const thr = m === 'do' ? t.do.warn : m === 'ph' ? t.ph.max : t.temp.max;
   let [mn, mx] = CHART_RANGE[m];
@@ -235,7 +271,11 @@ export function HoverChart({ props, metric }: { props: LineChartProps; metric: M
         setTip({
           x: e.clientX - w.left,
           y: e.clientY - w.top,
-          text: (i === n - 1 ? 'now' : hhmm(props.times![i])) + ' · ' + fmt(props.values[i], METRIC[metric].dec) + (u ? ' ' + u : ''),
+          text:
+            (i === n - 1 ? 'now' : hhmm(props.times![i])) +
+            ' · ' +
+            fmt(props.values[i], METRIC[metric].dec) +
+            (u ? ' ' + u : ''),
         });
       }}
       onMouseLeave={() => setTip(null)}
@@ -269,13 +309,25 @@ export function Gauge({ b, m }: { b: Basin; m: Metric }) {
   const arc = (a: number, b2: number, col: string, w: number) => {
     const p1 = P(a);
     const p2 = P(b2);
-    return <path d={`M${p1[0].toFixed(1)} ${p1[1].toFixed(1)}A${r} ${r} 0 0 1 ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`} fill="none" stroke={col} strokeWidth={w} strokeLinecap="round" />;
+    return (
+      <path
+        d={`M${p1[0].toFixed(1)} ${p1[1].toFixed(1)}A${r} ${r} 0 0 1 ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`}
+        fill="none"
+        stroke={col}
+        strokeWidth={w}
+        strokeLinecap="round"
+      />
+    );
   };
   const st = b.cls[m];
   const col = st === 'bad' ? '#d6453d' : st === 'meh' ? '#d98a1c' : '#1d6f6a';
   const pv = P(v);
   return (
-    <svg viewBox="0 0 140 84" role="img" aria-label={`${METRIC[m].label} ${fmt(v, METRIC[m].dec)}, safe range ${safe[0]} to ${safe[1]}`}>
+    <svg
+      viewBox="0 0 140 84"
+      role="img"
+      aria-label={`${METRIC[m].label} ${fmt(v, METRIC[m].dec)}, safe range ${safe[0]} to ${safe[1]}`}
+    >
       {arc(R[0], R[1], '#e6efec', 10)}
       {arc(safe[0], safe[1], '#bfe3d8', 10)}
       {m === 'do' && t.do.crit != null && t.do.warn != null && (

@@ -40,7 +40,14 @@ export const healthBadge = (h: string) => HEALTH_BADGE[h] ?? ['b-info', h];
 
 function GaugeTile({ b, m }: { b: Basin; m: Metric }) {
   const t = b.thr;
-  const safe = m === 'do' ? `warning below ${t.do.warn} mg/L` : m === 'ph' ? `safe ${t.ph.min}–${t.ph.max}` : t.temp.min != null ? `safe ${t.temp.min}–${t.temp.max} °C` : 'no verified range';
+  const safe =
+    m === 'do'
+      ? `warning below ${t.do.warn} mg/L`
+      : m === 'ph'
+        ? `safe ${t.ph.min}–${t.ph.max}`
+        : t.temp.min != null
+          ? `safe ${t.temp.min}–${t.temp.max} °C`
+          : 'no verified range';
   return (
     <div className="tile">
       <span className="k">{METRIC[m].label}</span>
@@ -54,7 +61,12 @@ function GaugeTile({ b, m }: { b: Basin; m: Metric }) {
         </span>
         <span className="gs">
           {safe}
-          {m === 'do' && <> · <span>{b.sat != null ? Math.round(b.sat) : '–'}% O₂ saturation</span></>}
+          {m === 'do' && (
+            <>
+              {' '}
+              · <span>{b.sat != null ? Math.round(b.sat) : '–'}% O₂ saturation</span>
+            </>
+          )}
         </span>
       </div>
     </div>
@@ -67,7 +79,8 @@ function Finances({ b, onSaved }: { b: Basin; onSaved: () => void }) {
   const f = b.finance!;
   const [v, setV] = useState({ fish: b.fish, feed: f.feed, maint: f.maint, ops: f.ops });
   useEffect(() => setV({ fish: b.fish, feed: f.feed, maint: f.maint, ops: f.ops }), [b.fish, f.feed, f.maint, f.ops]);
-  const set = (k: keyof typeof v) => (e: React.ChangeEvent<HTMLInputElement>) => setV({ ...v, [k]: e.target.value === '' ? ('' as any) : +e.target.value });
+  const set = (k: keyof typeof v) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setV({ ...v, [k]: e.target.value === '' ? ('' as any) : +e.target.value });
   const profit = f.revenue - (+v.feed || 0) - (+v.maint || 0) - (+v.ops || 0);
   return (
     <div className="tile fin">
@@ -80,7 +93,10 @@ function Finances({ b, onSaved }: { b: Basin; onSaved: () => void }) {
         onSubmit={async (e) => {
           e.preventDefault();
           try {
-            await api(`/api/basins/${b.id}/finances`, { method: 'PUT', body: { fish: +v.fish || 0, feed: +v.feed || 0, maint: +v.maint || 0, ops: +v.ops || 0 } });
+            await api(`/api/basins/${b.id}/finances`, {
+              method: 'PUT',
+              body: { fish: +v.fish || 0, feed: +v.feed || 0, maint: +v.maint || 0, ops: +v.ops || 0 },
+            });
             toast(
               <>
                 <b>Saved</b> · {b.name} finances updated
@@ -135,7 +151,9 @@ export default function BasinDetail() {
   const ai = useAssistant();
   const [metric, setMetric] = useState<Metric>('do');
   const { data, error, reload } = useApi<Detail>(`/api/basins/${id}`, ['alert', 'farm', 'sensor_health']);
-  const series = useApi<{ times: string[]; values: number[] }>(`/api/basins/${id}/readings?metric=${metric}`, ['readings']);
+  const series = useApi<{ times: string[]; values: number[] }>(`/api/basins/${id}/readings?metric=${metric}`, [
+    'readings',
+  ]);
   const own = me!.role === 'owner';
   const lb = live?.basins.find((x) => x.id === id);
   const b = data ? ({ ...data, ...(lb ?? {}) } as Detail) : null;
@@ -148,7 +166,12 @@ export default function BasinDetail() {
   return (
     <>
       <div className="row">
-        <button className="small-btn" onClick={() => nav(own ? '/owner/basins' : me!.role === 'technician' ? '/technician/basins' : homePath(me!.role))}>
+        <button
+          className="small-btn"
+          onClick={() =>
+            nav(own ? '/owner/basins' : me!.role === 'technician' ? '/technician/basins' : homePath(me!.role))
+          }
+        >
           ← {own ? 'All basins' : 'Back'}
         </button>
         <div className="row">
@@ -197,7 +220,8 @@ export default function BasinDetail() {
           <p className="mini">Readings appear here a few minutes after the basin starts sending data.</p>
         )}
         <span className="mini">
-          Shaded area: outside the safe range for {b.species_name.toLowerCase()} ({b.thr.src}). Hover the chart to read any point.
+          Shaded area: outside the safe range for {b.species_name.toLowerCase()} ({b.thr.src}). Hover the chart to read
+          any point.
         </span>
       </div>
       <div className="grid g2">
@@ -209,7 +233,12 @@ export default function BasinDetail() {
           <span className="mini">Chance that oxygen falls below {b.thr.do.warn} mg/L before 06:00</span>
           <span className="v">{risk != null ? Math.round(risk * 100) + '%' : '–'}</span>
           <div className="risk-meter">
-            <i style={{ width: `${Math.round((risk ?? 0) * 100)}%`, background: (risk ?? 0) > 0.5 ? 'var(--crit)' : (risk ?? 0) > 0.2 ? 'var(--warn)' : 'var(--ok)' }} />
+            <i
+              style={{
+                width: `${Math.round((risk ?? 0) * 100)}%`,
+                background: (risk ?? 0) > 0.5 ? 'var(--crit)' : (risk ?? 0) > 0.2 ? 'var(--warn)' : 'var(--ok)',
+              }}
+            />
           </div>
           <div className="feat">
             {p ? (
@@ -229,7 +258,11 @@ export default function BasinDetail() {
               </div>
             )}
           </div>
-          <button className="small-btn" style={{ justifySelf: 'start' }} onClick={() => ai.ask(`Explain the oxygen risk of ${b.name}`)}>
+          <button
+            className="small-btn"
+            style={{ justifySelf: 'start' }}
+            onClick={() => ai.ask(`Explain the oxygen risk of ${b.name}`)}
+          >
             <Icon name="chat" size={14} />
             Explain this estimate
           </button>
@@ -250,7 +283,11 @@ export default function BasinDetail() {
               ))}
             </div>
             {me!.permissions.reports && (
-              <button className="small-btn" style={{ justifySelf: 'start' }} onClick={() => nav(`${homePath(me!.role)}/report`, { state: { basin: b.id } })}>
+              <button
+                className="small-btn"
+                style={{ justifySelf: 'start' }}
+                onClick={() => nav(`${homePath(me!.role)}/report`, { state: { basin: b.id } })}
+              >
                 Report a problem in this basin
               </button>
             )}

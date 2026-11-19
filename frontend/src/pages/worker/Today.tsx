@@ -145,7 +145,11 @@ export default function WorkerToday() {
             <h3>My tasks</h3>
             <span className="mini">{tasks.length} assigned</span>
           </div>
-          {tasks.length ? tasks.map((t) => <TaskCheck key={t.id} t={t} onChange={reload} />) : <p className="mini">No tasks assigned to you.</p>}
+          {tasks.length ? (
+            tasks.map((t) => <TaskCheck key={t.id} t={t} onChange={reload} />)
+          ) : (
+            <p className="mini">No tasks assigned to you.</p>
+          )}
         </div>
         <div className="tile">
           <div className="section-title">
@@ -160,7 +164,12 @@ export default function WorkerToday() {
             {data.alerts.length ? (
               data.alerts.slice(0, 4).map((a) => (
                 <div className="brow" style={{ cursor: 'default' }} key={a.id}>
-                  <span className="sdot" style={{ background: a.severity === 'high' || a.severity === 'critical' ? 'var(--crit)' : 'var(--warn)' }} />
+                  <span
+                    className="sdot"
+                    style={{
+                      background: a.severity === 'high' || a.severity === 'critical' ? 'var(--crit)' : 'var(--warn)',
+                    }}
+                  />
                   <span className="bn">
                     <b>{a.basin}</b>
                     <span>{a.title}</span>

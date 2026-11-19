@@ -21,12 +21,32 @@ export function Words({ text }: { text: string }) {
   );
 }
 
-export function HomeHero({ eyebrow, title, text, ctas, progress }: { eyebrow: string; title: ReactNode; text: ReactNode; ctas: ReactNode; progress?: number | null }) {
+export function HomeHero({
+  eyebrow,
+  title,
+  text,
+  ctas,
+  progress,
+}: {
+  eyebrow: string;
+  title: ReactNode;
+  text: ReactNode;
+  ctas: ReactNode;
+  progress?: number | null;
+}) {
   const ref = useRef<HTMLHeadingElement>(null);
   useLayoutEffect(() => {
     if (reduceMotion() || !ref.current) return;
     const ctx = gsap.context(() => {
-      gsap.from(ref.current!.querySelectorAll('.w'), { opacity: 0, y: 24, filter: 'blur(10px)', duration: 1, stagger: 0.06, ease: 'power3.out', clearProps: 'filter' });
+      gsap.from(ref.current!.querySelectorAll('.w'), {
+        opacity: 0,
+        y: 24,
+        filter: 'blur(10px)',
+        duration: 1,
+        stagger: 0.06,
+        ease: 'power3.out',
+        clearProps: 'filter',
+      });
     });
     return () => ctx.revert();
   }, []);
@@ -52,7 +72,17 @@ export function HomeHero({ eyebrow, title, text, ctas, progress }: { eyebrow: st
   );
 }
 
-export function Ticket({ label, value, note, alert }: { label: string; value: ReactNode; note: ReactNode; alert?: boolean }) {
+export function Ticket({
+  label,
+  value,
+  note,
+  alert,
+}: {
+  label: string;
+  value: ReactNode;
+  note: ReactNode;
+  alert?: boolean;
+}) {
   return (
     <div className={`card${alert ? ' alert-card' : ''}`}>
       <small>{label}</small>
@@ -67,7 +97,15 @@ export function Tickets({ children }: { children: ReactNode }) {
   useLayoutEffect(() => {
     if (reduceMotion() || !ref.current) return;
     const ctx = gsap.context(() => {
-      gsap.from(ref.current!.querySelectorAll('.card'), { y: 40, opacity: 0, duration: 0.9, stagger: 0.08, ease: 'power3.out', delay: 0.2, clearProps: 'opacity,transform' });
+      gsap.from(ref.current!.querySelectorAll('.card'), {
+        y: 40,
+        opacity: 0,
+        duration: 0.9,
+        stagger: 0.08,
+        ease: 'power3.out',
+        delay: 0.2,
+        clearProps: 'opacity,transform',
+      });
     });
     return () => ctx.revert();
   }, []);
@@ -106,7 +144,14 @@ export function useEnter(ready: boolean, key: string) {
     if (!ready || done.current === key || reduceMotion()) return;
     done.current = key;
     const ctx = gsap.context(() => {
-      gsap.from('#content > *:not(.home-hero):not(.tickets)', { opacity: 0, y: 16, duration: 0.55, stagger: 0.05, ease: 'power3.out', clearProps: 'opacity,transform' });
+      gsap.from('#content > *:not(.home-hero):not(.tickets)', {
+        opacity: 0,
+        y: 16,
+        duration: 0.55,
+        stagger: 0.05,
+        ease: 'power3.out',
+        clearProps: 'opacity,transform',
+      });
     });
     return () => ctx.revert();
   }, [ready, key]);

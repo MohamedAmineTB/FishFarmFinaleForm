@@ -33,15 +33,18 @@ interface Turn {
   data: { name: string; args: unknown }[];
 }
 
-const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+const esc = (s: string) =>
+  s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 /** Tiny safe markdown (ported from the prototype): escape first, then paragraphs, lists and **bold**. Never raw HTML. */
 export function md(t: string) {
   return esc(t)
     .split(/\n\n+/)
     .map((block) => {
       const lines = block.split('\n');
-      if (lines.every((l) => /^- /.test(l))) return '<ul>' + lines.map((l) => '<li>' + l.slice(2) + '</li>').join('') + '</ul>';
-      if (lines.every((l) => /^\d+\. /.test(l))) return '<ol>' + lines.map((l) => '<li>' + l.replace(/^\d+\. /, '') + '</li>').join('') + '</ol>';
+      if (lines.every((l) => /^- /.test(l)))
+        return '<ul>' + lines.map((l) => '<li>' + l.slice(2) + '</li>').join('') + '</ul>';
+      if (lines.every((l) => /^\d+\. /.test(l)))
+        return '<ol>' + lines.map((l) => '<li>' + l.replace(/^\d+\. /, '') + '</li>').join('') + '</ol>';
       return '<p>' + block.replace(/\n/g, '<br>') + '</p>';
     })
     .join('')
@@ -57,11 +60,34 @@ export function shortPublisher(p: string) {
 }
 
 function chipsFor(role: string, page: string, basin?: string) {
-  if (role === 'technician') return ['Is the Basin 4 alert a sensor problem?', 'Which sensors need calibration?', 'Summarize open alerts'];
-  if (role === 'worker') return ['What should I do first on this shift?', 'Why did oxygen drop in Basin 3 last night?', 'Summarize open alerts'];
-  if (page === 'basin' && basin) return [`Why did oxygen drop in ${basin} last night?`, `What if I add 500 fish to ${basin}?`, 'What is my risk today?'];
-  if (page === 'alerts') return ["Summarize today's critical alerts", 'Is the Basin 4 alert a sensor problem?', 'Why did oxygen drop in Basin 3 last night?'];
-  return ['What needs my attention today?', 'Why did oxygen drop in Basin 3 last night?', 'How can I raise revenue?', 'What is my risk today?', 'Give me 3 actions for this week', 'Compare margin per basin this quarter'];
+  if (role === 'technician')
+    return ['Is the Basin 4 alert a sensor problem?', 'Which sensors need calibration?', 'Summarize open alerts'];
+  if (role === 'worker')
+    return [
+      'What should I do first on this shift?',
+      'Why did oxygen drop in Basin 3 last night?',
+      'Summarize open alerts',
+    ];
+  if (page === 'basin' && basin)
+    return [
+      `Why did oxygen drop in ${basin} last night?`,
+      `What if I add 500 fish to ${basin}?`,
+      'What is my risk today?',
+    ];
+  if (page === 'alerts')
+    return [
+      "Summarize today's critical alerts",
+      'Is the Basin 4 alert a sensor problem?',
+      'Why did oxygen drop in Basin 3 last night?',
+    ];
+  return [
+    'What needs my attention today?',
+    'Why did oxygen drop in Basin 3 last night?',
+    'How can I raise revenue?',
+    'What is my risk today?',
+    'Give me 3 actions for this week',
+    'Compare margin per basin this quarter',
+  ];
 }
 
 async function* sse(body: unknown, signal: AbortSignal): AsyncGenerator<Ev> {
@@ -84,7 +110,13 @@ async function* sse(body: unknown, signal: AbortSignal): AsyncGenerator<Ev> {
     });
   }
   if (!r.ok || !r.body) {
-    yield { type: 'error', message: r.status === 422 ? 'Please keep questions under 2,000 characters.' : 'The assistant is unavailable right now. Try again in a moment.' };
+    yield {
+      type: 'error',
+      message:
+        r.status === 422
+          ? 'Please keep questions under 2,000 characters.'
+          : 'The assistant is unavailable right now. Try again in a moment.',
+    };
     return;
   }
   const reader = r.body.getReader();
@@ -125,7 +157,21 @@ function AiChart({ ev, basins }: { ev: Ev; basins: Basin[] }) {
   );
 }
 
-function TurnView({ t, basins, onAsk, onApprove, onCancel, onRate }: { t: Turn; basins: Basin[]; onAsk: (q: string) => void; onApprove: (id: string) => void; onCancel: (id: string) => void; onRate: (r: number, reason?: string) => void }) {
+function TurnView({
+  t,
+  basins,
+  onAsk,
+  onApprove,
+  onCancel,
+  onRate,
+}: {
+  t: Turn;
+  basins: Basin[];
+  onAsk: (q: string) => void;
+  onApprove: (id: string) => void;
+  onCancel: (id: string) => void;
+  onRate: (r: number, reason?: string) => void;
+}) {
   const [reasonOpen, setReasonOpen] = useState(false);
   const [reason, setReason] = useState('');
   const sources = t.ui.filter((u) => u.type === 'source');
@@ -164,7 +210,12 @@ function TurnView({ t, basins, onAsk, onApprove, onCancel, onRate }: { t: Turn; 
                     {r.why} · estimate
                   </span>
                   <div className="risk-meter">
-                    <i style={{ width: `${Math.round(r.p * 100)}%`, background: r.p > 0.5 ? 'var(--crit)' : r.p > 0.2 ? 'var(--warn)' : 'var(--ok)' }} />
+                    <i
+                      style={{
+                        width: `${Math.round(r.p * 100)}%`,
+                        background: r.p > 0.5 ? 'var(--crit)' : r.p > 0.2 ? 'var(--warn)' : 'var(--ok)',
+                      }}
+                    />
                   </div>
                 </div>
               ))}
@@ -185,7 +236,14 @@ function TurnView({ t, basins, onAsk, onApprove, onCancel, onRate }: { t: Turn; 
           <div className="srcs">
             {sources.map((s, i) =>
               s.url ? (
-                <a className="src" key={i} href={s.url} target="_blank" rel="noreferrer noopener" title={`${s.publisher}${s.year ? ', ' + s.year : ''}`}>
+                <a
+                  className="src"
+                  key={i}
+                  href={s.url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  title={`${s.publisher}${s.year ? ', ' + s.year : ''}`}
+                >
                   {s.publisher ? `${shortPublisher(s.publisher)} · ${s.title}` : s.title}
                 </a>
               ) : (
@@ -202,7 +260,14 @@ function TurnView({ t, basins, onAsk, onApprove, onCancel, onRate }: { t: Turn; 
               Data used · {t.data.length} tool call{t.data.length > 1 ? 's' : ''}
             </summary>
             <pre>
-              {t.data.map((d) => `${d.name}(${Object.entries((d.args as Record<string, unknown>) || {}).map(([k, v]) => `${k}=${v}`).join(', ')})`).join('\n')}
+              {t.data
+                .map(
+                  (d) =>
+                    `${d.name}(${Object.entries((d.args as Record<string, unknown>) || {})
+                      .map(([k, v]) => `${k}=${v}`)
+                      .join(', ')})`,
+                )
+                .join('\n')}
               {'\n'}owner scope: set by the server from your login
             </pre>
           </details>
@@ -211,7 +276,14 @@ function TurnView({ t, basins, onAsk, onApprove, onCancel, onRate }: { t: Turn; 
           <div className={`approve${a.status === 'approved' ? ' done' : ''}`} key={a.id}>
             {a.status === 'approved' ? (
               <span className="mini">
-                ✓ Task created{a.assignee_name ? <> and assigned to <b>{a.assignee_name}</b></> : null}. You'll find it under Maintenance.
+                ✓ Task created
+                {a.assignee_name ? (
+                  <>
+                    {' '}
+                    and assigned to <b>{a.assignee_name}</b>
+                  </>
+                ) : null}
+                . You'll find it under Maintenance.
               </span>
             ) : a.status === 'cancelled' ? (
               <span className="mini">No task created.</span>
@@ -266,7 +338,13 @@ function TurnView({ t, basins, onAsk, onApprove, onCancel, onRate }: { t: Turn; 
             <label htmlFor={`why-${t.messageId}`} className="mini" style={{ position: 'absolute', left: -9999 }}>
               What was wrong?
             </label>
-            <input id={`why-${t.messageId}`} placeholder="What was wrong? (optional)" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} />
+            <input
+              id={`why-${t.messageId}`}
+              placeholder="What was wrong? (optional)"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              maxLength={500}
+            />
             <button className="small-btn" type="submit">
               Send
             </button>
@@ -286,7 +364,8 @@ function TurnView({ t, basins, onAsk, onApprove, onCancel, onRate }: { t: Turn; 
   );
 }
 
-const SR: any = typeof window !== 'undefined' ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition : null;
+const SR: any =
+  typeof window !== 'undefined' ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition : null;
 
 export function AssistantProvider({ children }: { children: ReactNode }) {
   const [isOpen, setOpen] = useState(false);
@@ -313,7 +392,8 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
     return { page: b ? 'basin' : name === 'alerts' ? 'alerts' : name, basin: b?.name };
   }, [loc.pathname, basins]);
 
-  const scroll = () => window.requestAnimationFrame(() => body.current && (body.current.scrollTop = body.current.scrollHeight));
+  const scroll = () =>
+    window.requestAnimationFrame(() => body.current && (body.current.scrollTop = body.current.scrollHeight));
   const patch = (fn: (t: Turn) => Turn) => setTurns((ts) => ts.map((t, i) => (i === ts.length - 1 ? fn(t) : t)));
 
   const ask = useCallback(
@@ -324,7 +404,10 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
       setBusy(true);
       const ctrl = new AbortController();
       abort.current = ctrl;
-      setTurns((ts) => [...ts, { q, steps: [], text: '', ui: [], approvals: [], followups: [], done: false, data: [] }]);
+      setTurns((ts) => [
+        ...ts,
+        { q, steps: [], text: '', ui: [], approvals: [], followups: [], done: false, data: [] },
+      ]);
       scroll();
       try {
         for await (const ev of sse({ message: q, conversation_id: convId, page }, ctrl.signal)) {
@@ -332,9 +415,16 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
             setConvId(ev.conversation_id);
             patch((t) => ({ ...t, dir: ev.dir }));
           } else if (ev.type === 'token') patch((t) => ({ ...t, text: t.text + ev.text }));
-          else if (ev.type === 'tool_call') patch((t) => ({ ...t, steps: [...t.steps, { id: ev.id, label: ev.label, done: false, ok: true }], data: [...t.data, { name: ev.name, args: ev.args }] }));
-          else if (ev.type === 'tool_result') patch((t) => ({ ...t, steps: t.steps.map((s) => (s.id === ev.id ? { ...s, done: true, ok: ev.ok } : s)) }));
-          else if (['chart', 'risk', 'compare', 'source'].includes(ev.type)) patch((t) => ({ ...t, ui: [...t.ui, ev] }));
+          else if (ev.type === 'tool_call')
+            patch((t) => ({
+              ...t,
+              steps: [...t.steps, { id: ev.id, label: ev.label, done: false, ok: true }],
+              data: [...t.data, { name: ev.name, args: ev.args }],
+            }));
+          else if (ev.type === 'tool_result')
+            patch((t) => ({ ...t, steps: t.steps.map((s) => (s.id === ev.id ? { ...s, done: true, ok: ev.ok } : s)) }));
+          else if (['chart', 'risk', 'compare', 'source'].includes(ev.type))
+            patch((t) => ({ ...t, ui: [...t.ui, ev] }));
           else if (ev.type === 'approval_request') patch((t) => ({ ...t, approvals: [...t.approvals, ev] }));
           else if (ev.type === 'followups') patch((t) => ({ ...t, followups: ev.items }));
           else if (ev.type === 'error') patch((t) => ({ ...t, error: ev.message }));
@@ -342,7 +432,8 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
           scroll();
         }
       } catch (e) {
-        if ((e as Error).name !== 'AbortError') patch((t) => ({ ...t, error: 'The connection was interrupted. Try again.' }));
+        if ((e as Error).name !== 'AbortError')
+          patch((t) => ({ ...t, error: 'The connection was interrupted. Try again.' }));
         else patch((t) => ({ ...t, error: 'Stopped.' }));
       } finally {
         patch((t) => ({ ...t, done: true, steps: t.steps.map((s) => ({ ...s, done: true })) }));
@@ -358,14 +449,26 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
     if (busy) return;
     setTurns([]);
     setConvId(null);
-    api<typeof history>('/api/chat/conversations').then(setHistory).catch(() => undefined);
+    api<typeof history>('/api/chat/conversations')
+      .then(setHistory)
+      .catch(() => undefined);
   }, [busy]);
 
   const loadConversation = async (id: string) => {
     const msgs = await api<any[]>(`/api/chat/conversations/${id}`);
     const out: Turn[] = [];
     for (const m of msgs) {
-      if (m.role === 'user') out.push({ q: m.content.text, steps: [], text: '', ui: [], approvals: [], followups: [], done: true, data: [] });
+      if (m.role === 'user')
+        out.push({
+          q: m.content.text,
+          steps: [],
+          text: '',
+          ui: [],
+          approvals: [],
+          followups: [],
+          done: true,
+          data: [],
+        });
       else if (out.length) {
         const c = m.content;
         const t = out[out.length - 1];
@@ -397,7 +500,10 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
   }, []);
   useEffect(() => {
     if (!isOpen) return;
-    if (!turns.length) api<typeof history>('/api/chat/conversations').then(setHistory).catch(() => undefined);
+    if (!turns.length)
+      api<typeof history>('/api/chat/conversations')
+        .then(setHistory)
+        .catch(() => undefined);
     window.setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 300);
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
     document.addEventListener('keydown', esc);
@@ -414,8 +520,12 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
 
   const decide = async (id: string, decision: 'approve' | 'cancel') => {
     try {
-      const r = await api<{ status: string; assignee?: string }>(`/api/chat/actions/${id}/${decision}`, { method: 'POST' });
-      setTurns((ts) => ts.map((t) => ({ ...t, approvals: t.approvals.map((a) => (a.id === id ? { ...a, status: r.status } : a)) })));
+      const r = await api<{ status: string; assignee?: string }>(`/api/chat/actions/${id}/${decision}`, {
+        method: 'POST',
+      });
+      setTurns((ts) =>
+        ts.map((t) => ({ ...t, approvals: t.approvals.map((a) => (a.id === id ? { ...a, status: r.status } : a)) })),
+      );
       if (decision === 'approve') {
         const a = turns.flatMap((t) => t.approvals).find((x) => x.id === id);
         toast(
@@ -443,24 +553,45 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
   return (
     <AssistantCtx.Provider value={value}>
       {children}
-      <aside className={`panel-ai${isOpen ? ' open' : ''}`} id="aiPanel" aria-label="Farm assistant" aria-hidden={!isOpen}>
+      <aside
+        className={`panel-ai${isOpen ? ' open' : ''}`}
+        id="aiPanel"
+        aria-label="Farm assistant"
+        aria-hidden={!isOpen}
+      >
         <div className="ai-head">
           <b>Farm assistant</b>
           <div className="acts">
             {turns.length > 0 && (
-              <button className="small-btn" type="button" onClick={() => window.print()} title="Save this conversation as a PDF">
+              <button
+                className="small-btn"
+                type="button"
+                onClick={() => window.print()}
+                title="Save this conversation as a PDF"
+              >
                 PDF
               </button>
             )}
             <button className="small-btn" type="button" id="aiNew" onClick={reset}>
               New chat
             </button>
-            <button className="small-btn" type="button" id="aiClose" aria-label="Close assistant" onClick={() => setOpen(false)}>
+            <button
+              className="small-btn"
+              type="button"
+              id="aiClose"
+              aria-label="Close assistant"
+              onClick={() => setOpen(false)}
+            >
               ✕
             </button>
           </div>
         </div>
-        {demo && <div className="demo-banner">Demo mode: answers are built from the farm's live data with prepared templates. Add an API key in the real app for free-form answers.</div>}
+        {demo && (
+          <div className="demo-banner">
+            Demo mode: answers are built from the farm's live data with prepared templates. Add an API key in the real
+            app for free-form answers.
+          </div>
+        )}
         {critical.length > 0 && (
           <div className="emergency" role="alert">
             <b>Emergency · {critical.map((b) => b.name).join(', ')} is critical</b>
@@ -470,7 +601,9 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
               <li>Exchange 25–50 % of the water if you can.</li>
               <li>If the reading looks impossible, call the technician: it may be the probe.</li>
             </ol>
-            <span className="mini">Sources: UF/IFAS FA002 · SRAC pond aeration. The alert itself comes from the alert engine.</span>
+            <span className="mini">
+              Sources: UF/IFAS FA002 · SRAC pond aeration. The alert itself comes from the alert engine.
+            </span>
           </div>
         )}
         <div className="ai-body" id="aiBody" ref={body}>
@@ -478,7 +611,9 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
             <div className="ai-empty">
               <strong>Ask your farm.</strong>
               <span>
-                I read the live readings, alerts, costs and the oxygen prediction for your basins, check the safe range for each species, and answer with numbers and sources. I ask before I create any task. I can't control equipment, and alerts always come from the alert engine.
+                I read the live readings, alerts, costs and the oxygen prediction for your basins, check the safe range
+                for each species, and answer with numbers and sources. I ask before I create any task. I can't control
+                equipment, and alerts always come from the alert engine.
               </span>
               <div className="chips">
                 {chipsFor(me?.role ?? 'owner', page.page, page.basin).map((q) => (
@@ -510,7 +645,9 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
                 onCancel={(id) => decide(id, 'cancel')}
                 onRate={async (r, reason) => {
                   setTurns((ts) => ts.map((x, k) => (k === i ? { ...x, rating: r } : x)));
-                  await api('/api/chat/feedback', { body: { message_id: t.messageId, rating: r, reason } }).catch(() => undefined);
+                  await api('/api/chat/feedback', { body: { message_id: t.messageId, rating: r, reason } }).catch(
+                    () => undefined,
+                  );
                   if (reason || r === 1)
                     toast(
                       <>
@@ -535,9 +672,23 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
           <label htmlFor="aiText" className="mini" style={{ position: 'absolute', left: -9999 }}>
             Ask a question
           </label>
-          <input id="aiText" ref={inputRef} autoComplete="off" maxLength={2000} placeholder="Ask about a basin, an alert or your costs" value={input} onChange={(e) => setInput(e.target.value)} />
+          <input
+            id="aiText"
+            ref={inputRef}
+            autoComplete="off"
+            maxLength={2000}
+            placeholder="Ask about a basin, an alert or your costs"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+          />
           {SR && !busy && (
-            <button className="small-btn" type="button" onClick={voice} aria-label="Speak your question" aria-pressed={listening}>
+            <button
+              className="small-btn"
+              type="button"
+              onClick={voice}
+              aria-label="Speak your question"
+              aria-pressed={listening}
+            >
               {listening ? '…' : '🎤'}
             </button>
           )}

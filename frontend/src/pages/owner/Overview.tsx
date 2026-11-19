@@ -22,7 +22,9 @@ interface OverviewData {
 }
 
 export function LoadError({ error }: { error: Error | null }) {
-  return error ? <div className="load-err">We couldn't load this page: {error.message} Try again in a moment.</div> : null;
+  return error ? (
+    <div className="load-err">We couldn't load this page: {error.message} Try again in a moment.</div>
+  ) : null;
 }
 
 export default function Overview() {
@@ -88,9 +90,22 @@ export default function Overview() {
         }
       />
       <Tickets>
-        <Ticket label="Basins" value={<CountUp value={basins.length} />} note={`${basins.filter((b) => b.status === 'healthy').length} healthy`} />
-        <Ticket label="Open alerts" value={<span data-open-count>{open}</span>} note={`${data.alerts.sensor} hardware · ${data.alerts.water} water`} alert />
-        <Ticket label="Profit this quarter" value={<CountUp value={f.profit} kind="eur" />} note={`${Math.round(100 * f.margin)}% margin`} />
+        <Ticket
+          label="Basins"
+          value={<CountUp value={basins.length} />}
+          note={`${basins.filter((b) => b.status === 'healthy').length} healthy`}
+        />
+        <Ticket
+          label="Open alerts"
+          value={<span data-open-count>{open}</span>}
+          note={`${data.alerts.sensor} hardware · ${data.alerts.water} water`}
+          alert
+        />
+        <Ticket
+          label="Profit this quarter"
+          value={<CountUp value={f.profit} kind="eur" />}
+          note={`${Math.round(100 * f.margin)}% margin`}
+        />
         <Ticket label="Team" value={<CountUp value={data.team.total} />} note={fmtTeam} />
       </Tickets>
       <div className="grid g2">
@@ -172,10 +187,13 @@ export default function Overview() {
           </div>
         </div>
         <span className="mini">
-          <span style={{ color: '#1d6f6a' }}>■</span> revenue &nbsp; <span style={{ color: '#9cc9bf' }}>■</span> costs, per basin
+          <span style={{ color: '#1d6f6a' }}>■</span> revenue &nbsp; <span style={{ color: '#9cc9bf' }}>■</span> costs,
+          per basin
         </span>
         <div className="chart">
-          <BarChart basins={basins.map((b) => ({ name: b.name, revenue: b.finance!.revenue, costs: b.finance!.costs }))} />
+          <BarChart
+            basins={basins.map((b) => ({ name: b.name, revenue: b.finance!.revenue, costs: b.finance!.costs }))}
+          />
         </div>
       </section>
     </>

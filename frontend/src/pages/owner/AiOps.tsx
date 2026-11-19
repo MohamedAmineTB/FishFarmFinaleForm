@@ -12,7 +12,16 @@ interface Ops {
   tools: { name: string; n: number }[];
   feedback: { up: number; down: number; up_rate: number | null };
   providers: { provider: string; model: string; requests: number; cost_usd: number }[];
-  recent: { at: string; user: string; latency_ms: number; tokens: number; cost_usd: number; tools: string[]; status: string; feedback: number | null }[];
+  recent: {
+    at: string;
+    user: string;
+    latency_ms: number;
+    tokens: number;
+    cost_usd: number;
+    tools: string[];
+    status: string;
+    feedback: number | null;
+  }[];
   negative_reasons: { reason: string; at: string }[];
 }
 
@@ -38,7 +47,16 @@ function Bars({ days }: { days: Ops['days'] }) {
       ))}
       {days.map((d, i) => (
         <g key={d.day}>
-          <rect x={pl + i * cw + cw * 0.2} y={y(d.requests)} width={cw * 0.6} height={H - pb - y(d.requests)} rx="3" fill="#1d6f6a" className="grow" style={{ animationDelay: `${i * 0.03}s` }}>
+          <rect
+            x={pl + i * cw + cw * 0.2}
+            y={y(d.requests)}
+            width={cw * 0.6}
+            height={H - pb - y(d.requests)}
+            rx="3"
+            fill="#1d6f6a"
+            className="grow"
+            style={{ animationDelay: `${i * 0.03}s` }}
+          >
             <title>
               {d.day}: {d.requests} requests
             </title>
@@ -66,7 +84,8 @@ export default function AiOps() {
     <>
       <div className="section-title">
         <p className="mini" style={{ maxWidth: '70ch' }}>
-          How the farm assistant is used and how well it answers, over the last 14 days. Every request is logged with its latency, tokens, estimated cost, tools and feedback.
+          How the farm assistant is used and how well it answers, over the last 14 days. Every request is logged with
+          its latency, tokens, estimated cost, tools and feedback.
         </p>
       </div>
       <div className="grid g4 ops-kpis">
@@ -90,7 +109,9 @@ export default function AiOps() {
         </div>
         <div className="tile">
           <span className="k">Thumbs up</span>
-          <span className="v">{data.feedback.up_rate != null ? Math.round(data.feedback.up_rate * 100) + '%' : '–'}</span>
+          <span className="v">
+            {data.feedback.up_rate != null ? Math.round(data.feedback.up_rate * 100) + '%' : '–'}
+          </span>
           <span className="mini">
             {data.feedback.up} up · {data.feedback.down} down
           </span>
@@ -107,7 +128,15 @@ export default function AiOps() {
           <h3>Latency per day</h3>
           <div className="chart">
             {lat.some((v) => v > 0) ? (
-              <LineChart values={lat} min={0} max={Math.max(1000, ...lat) * 1.2} dec={0} color="#1d6f6a" h={200} label="Average latency per day (ms)" />
+              <LineChart
+                values={lat}
+                min={0}
+                max={Math.max(1000, ...lat) * 1.2}
+                dec={0}
+                color="#1d6f6a"
+                h={200}
+                label="Average latency per day (ms)"
+              />
             ) : (
               <p className="mini">No requests yet.</p>
             )}

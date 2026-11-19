@@ -1,7 +1,8 @@
 // Canvas scenes ported from the prototype (makeWater, drawFish, stats water, night lake).
 import { useEffect, useRef, type RefObject } from 'react';
 
-export const reduceMotion = () => typeof window !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+export const reduceMotion = () =>
+  typeof window !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 const DPR = () => Math.min(window.devicePixelRatio || 1, 1.5);
 
@@ -19,7 +20,15 @@ export function fitCanvas(c: HTMLCanvasElement) {
   return { ctx, w, h };
 }
 
-export function drawFish(ctx: CanvasRenderingContext2D, x: number, y: number, s: number, dir: number, ph: number, col: string) {
+export function drawFish(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  s: number,
+  dir: number,
+  ph: number,
+  col: string,
+) {
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(dir, 1);
@@ -49,16 +58,49 @@ export type Fish = { x: number; y: number; z: number; dir: number; sp: number; p
 export function makeFish(n: number, w: number, h: number, top: number): Fish[] {
   return Array.from({ length: n }, () => {
     const z = Math.random();
-    return { x: Math.random() * w, y: top + (h - top) * (0.15 + 0.75 * Math.random()), z, dir: Math.random() < 0.78 ? 1 : -1, sp: 0.25 + z * 0.55, ph: Math.random() * 6, off: Math.random() * 6 };
+    return {
+      x: Math.random() * w,
+      y: top + (h - top) * (0.15 + 0.75 * Math.random()),
+      z,
+      dir: Math.random() < 0.78 ? 1 : -1,
+      sp: 0.25 + z * 0.55,
+      ph: Math.random() * 6,
+      off: Math.random() * 6,
+    };
   });
 }
 
 const PALETTES = {
-  light: { stops: [[0, '#cfe9e2'], [0.35, '#6fb3a8'], [0.75, '#1e6a6a'], [1, '#0c3038']] as [number, string][], fish: '8,38,44', ray: 0.16, bubble: '235,255,250' },
-  dark: { stops: [[0, '#1b5a5e'], [0.5, '#0f3a42'], [1, '#071f25']] as [number, string][], fish: '160,220,205', ray: 0.07, bubble: '190,240,225' },
+  light: {
+    stops: [
+      [0, '#cfe9e2'],
+      [0.35, '#6fb3a8'],
+      [0.75, '#1e6a6a'],
+      [1, '#0c3038'],
+    ] as [number, string][],
+    fish: '8,38,44',
+    ray: 0.16,
+    bubble: '235,255,250',
+  },
+  dark: {
+    stops: [
+      [0, '#1b5a5e'],
+      [0.5, '#0f3a42'],
+      [1, '#071f25'],
+    ] as [number, string][],
+    fish: '160,220,205',
+    ray: 0.07,
+    bubble: '190,240,225',
+  },
 };
 
-export type WaterOpts = { palette?: 'light' | 'dark'; fish?: number; top?: number; scale?: number; aerators?: number[] };
+export type WaterOpts = {
+  palette?: 'light' | 'dark';
+  fish?: number;
+  top?: number;
+  scale?: number;
+  aerators?: number[];
+};
 
 /** One reusable underwater scene: light rays, plankton, fish and aerator bubbles. */
 export function makeWater(c: HTMLCanvasElement, o: WaterOpts) {
@@ -72,7 +114,12 @@ export function makeWater(c: HTMLCanvasElement, o: WaterOpts) {
     const { ctx, w, h } = fitCanvas(c);
     if (!fish || Math.abs(w - lastW) > 80) {
       fish = makeFish(Math.round((o.fish || 28) * (w < 700 ? 0.5 : 1)), w, h, h * (o.top ?? 0.18));
-      plankton = Array.from({ length: Math.round(w / 18) }, () => ({ x: Math.random() * w, y: Math.random() * h, r: rand(0.6, 1.8), s: rand(0.05, 0.2) }));
+      plankton = Array.from({ length: Math.round(w / 18) }, () => ({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: rand(0.6, 1.8),
+        s: rand(0.05, 0.2),
+      }));
       lastW = w;
     }
     const g = ctx.createLinearGradient(0, 0, 0, h);
@@ -114,7 +161,19 @@ export function makeWater(c: HTMLCanvasElement, o: WaterOpts) {
         const s = (7 + f.z * 17) * (o.scale || 1);
         if (f.dir > 0 && f.x > w + 40) f.x = -40;
         if (f.dir < 0 && f.x < -40) f.x = w + 40;
-        drawFish(ctx, f.x, f.y, s, f.dir, f.ph, 'rgba(' + pal.fish + ',' + ((o.palette === 'dark' ? 0.08 : 0.22) + f.z * (o.palette === 'dark' ? 0.22 : 0.5)).toFixed(2) + ')');
+        drawFish(
+          ctx,
+          f.x,
+          f.y,
+          s,
+          f.dir,
+          f.ph,
+          'rgba(' +
+            pal.fish +
+            ',' +
+            ((o.palette === 'dark' ? 0.08 : 0.22) + f.z * (o.palette === 'dark' ? 0.22 : 0.5)).toFixed(2) +
+            ')',
+        );
       });
     const ae = o.aerators || [0.16, 0.52, 0.86];
     if (!reduce && Math.random() < 0.55) {
@@ -140,7 +199,11 @@ export function makeWater(c: HTMLCanvasElement, o: WaterOpts) {
 }
 
 /** Run a draw function on every animation frame while the canvas is visible (1 fps with reduced motion). */
-export function useCanvasLoop(ref: RefObject<HTMLCanvasElement>, factory: (c: HTMLCanvasElement) => (t: number) => void, deps: unknown[] = []) {
+export function useCanvasLoop(
+  ref: RefObject<HTMLCanvasElement>,
+  factory: (c: HTMLCanvasElement) => (t: number) => void,
+  deps: unknown[] = [],
+) {
   const f = useRef(factory);
   f.current = factory;
   useEffect(() => {
@@ -151,7 +214,10 @@ export function useCanvasLoop(ref: RefObject<HTMLCanvasElement>, factory: (c: HT
     let visible = true;
     let raf = 0;
     let last = -Infinity;
-    const io = 'IntersectionObserver' in window ? new IntersectionObserver((es) => (visible = es[0].isIntersecting), { rootMargin: '100px' }) : null;
+    const io =
+      'IntersectionObserver' in window
+        ? new IntersectionObserver((es) => (visible = es[0].isIntersecting), { rootMargin: '100px' })
+        : null;
     io?.observe(c);
     draw(0);
     const loop = (t: number) => {
@@ -173,7 +239,15 @@ export function useCanvasLoop(ref: RefObject<HTMLCanvasElement>, factory: (c: HT
 export function WaterCanvas({ opts, id, label }: { opts: WaterOpts; id?: string; label?: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useCanvasLoop(ref, (c) => makeWater(c, opts));
-  return <canvas ref={ref} id={id} aria-hidden={label ? undefined : true} aria-label={label} role={label ? 'img' : undefined} />;
+  return (
+    <canvas
+      ref={ref}
+      id={id}
+      aria-hidden={label ? undefined : true}
+      aria-label={label}
+      role={label ? 'img' : undefined}
+    />
+  );
 }
 
 export { rand };

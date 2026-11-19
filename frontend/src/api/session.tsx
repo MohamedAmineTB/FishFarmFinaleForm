@@ -26,7 +26,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // restore the session after a page refresh from the httpOnly refresh cookie
-    refreshToken().then((t) => (t ? loadMe().catch(() => setState({ status: 'out', me: null })) : setState({ status: 'out', me: null })));
+    refreshToken().then((t) =>
+      t ? loadMe().catch(() => setState({ status: 'out', me: null })) : setState({ status: 'out', me: null }),
+    );
   }, [loadMe]);
 
   const value = useMemo<SessionApi>(

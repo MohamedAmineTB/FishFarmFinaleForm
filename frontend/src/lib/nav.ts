@@ -23,7 +23,13 @@ export function navItems(role: Role, p: Perms): NavItem[] {
     ].filter(Boolean) as NavItem[];
   return [
     { key: 'today', label: 'Today', icon: 'gauge', path: '/technician' },
-    p.alerts && { key: 'alerts', label: 'Hardware alerts', icon: 'alerts', path: '/technician/alerts', count: 'alerts' as const },
+    p.alerts && {
+      key: 'alerts',
+      label: 'Hardware alerts',
+      icon: 'alerts',
+      path: '/technician/alerts',
+      count: 'alerts' as const,
+    },
     p.sensors && { key: 'sensors', label: 'Sensor health', icon: 'sensors', path: '/technician/sensors' },
     p.maintenance && { key: 'maintenance', label: 'Maintenance', icon: 'maintenance', path: '/technician/maintenance' },
     p.basins && { key: 'basins', label: 'Basins', icon: 'basins', path: '/technician/basins' },

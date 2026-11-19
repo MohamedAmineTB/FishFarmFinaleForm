@@ -87,11 +87,15 @@ export default function Reports() {
                   <span className="mini mono">{fmtDate(r.time)}</span>
                 </div>
                 <span className="person">
-                  <span className={`avatar${r.role === 'Technician' ? ' tech' : ''}`} style={{ width: 24, height: 24, fontSize: 10 }}>
+                  <span
+                    className={`avatar${r.role === 'Technician' ? ' tech' : ''}`}
+                    style={{ width: 24, height: 24, fontSize: 10 }}
+                  >
                     {initials(r.author)}
                   </span>
                   <span className="mini">
-                    {r.author} · <span className={`badge ${r.role === 'Worker' ? 'b-healthy' : 'b-info'}`}>{r.role}</span>
+                    {r.author} ·{' '}
+                    <span className={`badge ${r.role === 'Worker' ? 'b-healthy' : 'b-info'}`}>{r.role}</span>
                   </span>
                 </span>
                 <p>{r.body}</p>
@@ -108,7 +112,11 @@ export default function Reports() {
               <Check />
             </span>
             <strong>{data.length ? "You're all caught up." : 'No reports yet.'}</strong>
-            <span>{data.length ? 'Every report has been read.' : 'Shift reports and maintenance logs from your team appear here.'}</span>
+            <span>
+              {data.length
+                ? 'Every report has been read.'
+                : 'Shift reports and maintenance logs from your team appear here.'}
+            </span>
           </div>
         )}
       </div>

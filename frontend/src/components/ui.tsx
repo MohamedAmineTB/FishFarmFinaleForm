@@ -14,7 +14,8 @@ import {
 import { cap } from '../lib/format';
 
 export const Badge = ({ st }: { st: string }) => <span className={`badge b-${st}`}>{cap(st)}</span>;
-export const sevClass = (s: string) => (s === 'high' || s === 'critical' ? 'b-critical' : s === 'medium' ? 'b-warning' : 'b-info');
+export const sevClass = (s: string) =>
+  s === 'high' || s === 'critical' ? 'b-critical' : s === 'medium' ? 'b-warning' : 'b-info';
 
 /* ---------- toasts (bottom centre, 4.2 s) ---------- */
 type Toast = { id: number; node: ReactNode };
@@ -56,7 +57,11 @@ function useFocusFirst(open: boolean, sel: string) {
   useEffect(() => {
     if (!open) return;
     const prev = document.activeElement as HTMLElement | null;
-    const t = window.setTimeout(() => (ref.current?.querySelector(sel) as HTMLElement | null)?.focus(), 30);
+    const t = window.setTimeout(() => {
+      // don't steal focus from a field the user is already typing in
+      if (ref.current?.contains(document.activeElement)) return;
+      (ref.current?.querySelector(sel) as HTMLElement | null)?.focus();
+    }, 30);
     return () => {
       window.clearTimeout(t);
       prev?.focus?.();
@@ -65,11 +70,25 @@ function useFocusFirst(open: boolean, sel: string) {
   return ref;
 }
 
-export function Modal({ open, onClose, children, label }: { open: boolean; onClose: () => void; children: ReactNode; label?: string }) {
+export function Modal({
+  open,
+  onClose,
+  children,
+  label,
+}: {
+  open: boolean;
+  onClose: () => void;
+  children: ReactNode;
+  label?: string;
+}) {
   useEscape(open, onClose);
   const ref = useFocusFirst(open, 'input, textarea, button');
   return (
-    <div className={`modal-bg${open ? ' open' : ''}`} id="modalBg" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className={`modal-bg${open ? ' open' : ''}`}
+      id="modalBg"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
       {open && (
         <div className="modal" role="dialog" aria-modal="true" aria-label={label} id="modal" ref={ref}>
           {children}
@@ -79,11 +98,25 @@ export function Modal({ open, onClose, children, label }: { open: boolean; onClo
   );
 }
 
-export function Sheet({ open, onClose, children, label }: { open: boolean; onClose: () => void; children: ReactNode; label?: string }) {
+export function Sheet({
+  open,
+  onClose,
+  children,
+  label,
+}: {
+  open: boolean;
+  onClose: () => void;
+  children: ReactNode;
+  label?: string;
+}) {
   useEscape(open, onClose);
   const ref = useFocusFirst(open, 'input, button');
   return (
-    <div className={`sheet-bg${open ? ' open' : ''}`} id="sheetBg" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className={`sheet-bg${open ? ' open' : ''}`}
+      id="sheetBg"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
       {open && (
         <div className="sheet" id="sheet" role="dialog" aria-modal="true" aria-label={label || 'Details'} ref={ref}>
           {children}

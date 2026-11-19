@@ -18,7 +18,11 @@ function FarmDots() {
   return (
     <div className="farm-dots" id="farmDots">
       {live.basins.map((b) => (
-        <i key={b.id} title={`${b.name}: ${b.status}`} style={{ background: b.status === 'critical' ? '#ff8f86' : b.status === 'warning' ? '#ffc96b' : '#7fe0b5' }} />
+        <i
+          key={b.id}
+          title={`${b.name}: ${b.status}`}
+          style={{ background: b.status === 'critical' ? '#ff8f86' : b.status === 'warning' ? '#ffc96b' : '#7fe0b5' }}
+        />
       ))}
       <span>{n === 0 ? 'no basins yet' : need ? `${need} of ${n} need attention` : 'all basins healthy'}</span>
     </div>
@@ -45,12 +49,26 @@ function SimButton() {
       aria-disabled={!owner}
       onClick={async () => {
         if (!owner) {
-          toast(<><b>Only the owner</b> can pause the simulator</>);
+          toast(
+            <>
+              <b>Only the owner</b> can pause the simulator
+            </>,
+          );
           return;
         }
         await api(`/api/simulator/${paused ? 'resume' : 'pause'}`, { method: 'POST' });
         reload();
-        toast(paused ? <><b>Simulator on</b> · sensors send readings again</> : <><b>Simulator paused</b> · readings frozen</>);
+        toast(
+          paused ? (
+            <>
+              <b>Simulator on</b> · sensors send readings again
+            </>
+          ) : (
+            <>
+              <b>Simulator paused</b> · readings frozen
+            </>
+          ),
+        );
       }}
     >
       <i />
@@ -79,7 +97,14 @@ function Bell({ alertsPath }: { alertsPath: string | null }) {
   const n = live?.open_alerts ?? 0;
   return (
     <div ref={ref} style={{ display: 'contents' }}>
-      <button className="icon-btn bell" type="button" id="bellBtn" aria-label="Notifications" aria-expanded={open} onClick={() => setOpen(!open)}>
+      <button
+        className="icon-btn bell"
+        type="button"
+        id="bellBtn"
+        aria-label="Notifications"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
         <Icon name="alerts" size={19} />
         <span className="dot" id="bellDot">
           {n ? n : ''}
@@ -121,7 +146,8 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
   const alertsItem = items.find((i) => i.key === 'alerts');
   const active = (path: string) => {
     if (path === loc.pathname) return true;
-    if (loc.pathname.includes('/basins/')) return path.endsWith('/basins') || (path === '/worker' && me.role === 'worker');
+    if (loc.pathname.includes('/basins/'))
+      return path.endsWith('/basins') || (path === '/worker' && me.role === 'worker');
     return false;
   };
   return (
@@ -144,7 +170,12 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
           {items.map((it) => {
             const cnt = it.count === 'alerts' ? live?.open_alerts : it.count === 'reports' ? live?.unread_reports : 0;
             return (
-              <button key={it.key} type="button" aria-current={active(it.path) ? 'page' : undefined} onClick={() => nav(it.path)}>
+              <button
+                key={it.key}
+                type="button"
+                aria-current={active(it.path) ? 'page' : undefined}
+                onClick={() => nav(it.path)}
+              >
                 <span className="lbl">
                   <Icon name={it.icon} size={17} />
                   {it.label}
@@ -180,7 +211,17 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
                 nav(role === 'owner' ? '/owner-auth' : '/worker-auth');
               }}
             >
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
                 <path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" />
               </svg>
             </button>
@@ -199,7 +240,17 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
             <SimButton />
             <Bell alertsPath={alertsItem?.path ?? null} />
             <button className="small-btn primary" type="button" onClick={() => ai.toggle()}>
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                width="15"
+                height="15"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
                 <path d="M4 12c3-4.5 9-4.5 12 0-3 4.5-9 4.5-12 0z" />
                 <path d="M16 12l4-3v6z" />
               </svg>

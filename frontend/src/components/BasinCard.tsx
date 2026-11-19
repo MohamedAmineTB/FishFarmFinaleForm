@@ -47,7 +47,9 @@ export function BasinCard({ b }: { b: Basin }) {
         <span>
           {b.fish.toLocaleString('en-US')} fish · {b.capacity} m³ · {b.density.toFixed(1)} per m³
         </span>
-        <span className="badge b-est">{b.risk != null ? `Low-O₂ risk ${Math.round(b.risk * 100)}% · estimate` : 'Low-O₂ risk · estimate pending'}</span>
+        <span className="badge b-est">
+          {b.risk != null ? `Low-O₂ risk ${Math.round(b.risk * 100)}% · estimate` : 'Low-O₂ risk · estimate pending'}
+        </span>
       </div>
     </div>
   );

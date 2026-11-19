@@ -16,13 +16,23 @@ export default function Basins() {
   if (!live) return null;
   const bs = live.basins;
   const owner = me?.role === 'owner';
-  if (!bs.length) return owner ? <FirstBasin onChange={reload} /> : <div className="tile none"><strong>No basins yet.</strong><span>Your farm owner hasn't added any basin.</span></div>;
+  if (!bs.length)
+    return owner ? (
+      <FirstBasin onChange={reload} />
+    ) : (
+      <div className="tile none">
+        <strong>No basins yet.</strong>
+        <span>Your farm owner hasn't added any basin.</span>
+      </div>
+    );
   const probes = bs.reduce((n, b) => n + Object.keys(b.sensors).length, 0);
   const count = (s: string) => bs.filter((b) => b.status === s).length;
   return (
     <>
       <div className="section-title">
-        <p className="mini">Live readings from {probes} probes. The water level shows oxygen saturation; colour shows status.</p>
+        <p className="mini">
+          Live readings from {probes} probes. The water level shows oxygen saturation; colour shows status.
+        </p>
         <div className="row">
           <span className="badge b-healthy">{count('healthy')} healthy</span>
           <span className="badge b-warning">{count('warning')} warning</span>

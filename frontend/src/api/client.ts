@@ -60,7 +60,10 @@ async function parse(r: Response) {
   }
 }
 
-export async function api<T = any>(path: string, opts: { method?: string; body?: unknown; retry?: boolean } = {}): Promise<T> {
+export async function api<T = any>(
+  path: string,
+  opts: { method?: string; body?: unknown; retry?: boolean } = {},
+): Promise<T> {
   const headers: Record<string, string> = {};
   if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;

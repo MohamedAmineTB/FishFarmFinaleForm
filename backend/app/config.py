@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 10
     rate_limit_per_day: int = 100
     daily_token_budget: int = 200_000
-    embedding_backend: str = "auto"  # auto | sentence_transformers | hash
+    embedding_backend: str = "hash"  # hash | sentence_transformers | auto
     embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
     model_dir: str = "../ml/artifacts"

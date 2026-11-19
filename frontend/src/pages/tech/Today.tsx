@@ -82,7 +82,11 @@ export default function TechToday() {
           note={bad.map((x) => x.code).join(' · ') || 'all fine'}
         />
         <Ticket label="Hardware alerts" value={data.alerts.length} note="stuck, drifting or broken" alert />
-        <Ticket label="Open tasks" value={tasks.length} note={`${tasks.filter((t) => t.status === 'in_progress').length} in progress`} />
+        <Ticket
+          label="Open tasks"
+          value={tasks.length}
+          note={`${tasks.filter((t) => t.status === 'in_progress').length} in progress`}
+        />
         <Ticket
           label="Last calibration"
           value={
@@ -109,7 +113,11 @@ export default function TechToday() {
             )}
           </div>
           <div className="list">
-            <AlertList alerts={data.alerts} onChanged={reload} empty={<p className="mini">No hardware alerts open.</p>} />
+            <AlertList
+              alerts={data.alerts}
+              onChanged={reload}
+              empty={<p className="mini">No hardware alerts open.</p>}
+            />
           </div>
         </div>
         <div className="tile">
@@ -132,7 +140,10 @@ export default function TechToday() {
                     {t.who} · due {t.due}
                   </span>
                 </span>
-                <span className={`badge ${t.status === 'pending' ? 'b-warning' : 'b-info'}`} style={{ marginLeft: 'auto' }}>
+                <span
+                  className={`badge ${t.status === 'pending' ? 'b-warning' : 'b-info'}`}
+                  style={{ marginLeft: 'auto' }}
+                >
                   {STATUS_LABEL[t.status]}
                 </span>
               </div>
