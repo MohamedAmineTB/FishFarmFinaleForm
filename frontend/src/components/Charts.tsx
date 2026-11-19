@@ -61,7 +61,8 @@ export function LineChart(o: LineChartProps) {
   }
   const times: JSX.Element[] = [];
   if (o.times) {
-    for (let i = 0; i < n - 1; i += 24)
+    const every = Math.max(1, Math.round((n - 1) / 4)); // 24 for the 97-point (15-minute) series, like the prototype
+    for (let i = 0; i < n - 1 - every / 2; i += every)
       times.push(
         <text key={i} x={x(i)} y={H - 8} textAnchor={i ? 'middle' : 'start'}>
           {hhmm(o.times[i])}
