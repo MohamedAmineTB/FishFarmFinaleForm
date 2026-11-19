@@ -51,8 +51,10 @@ def update_task(task_id: uuid.UUID, body: TaskStatusIn, ctx: Ctx = Depends(curre
 
 
 @router.get("/sensors")
-def sensors(ctx: Ctx = Depends(require_perm("sensors")), db: Session = Depends(get_db)):
+def sensors(ctx: Ctx = Depends(current_ctx), db: Session = Depends(get_db)):
     """Sensor health table with a 6-hour sparkline (15-minute means) per probe."""
+    if not (ctx.can("sensors") or ctx.can("maintenance")):
+        raise HTTPException(403, "You don't have access to sensors. Ask your farm owner.")
     now = datetime.now(UTC)
     rows = db.scalars(select(Sensor).where(Sensor.owner_user_id == ctx.owner_id).order_by(Sensor.code)).all()
     basins = {b.id: b for b in db.scalars(select(Basin).where(Basin.owner_user_id == ctx.owner_id))}

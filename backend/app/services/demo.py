@@ -19,14 +19,14 @@ from .farm import create_basin, create_member
 BASINS = [
     # name, species, m3, fish, revenue, feed, maint, ops, profile
     ("Basin 1", "tilapia", 180, 4200, 21400, 9100, 1300, 2600,
-     {"base": {"temp": 28.2, "do": 6.9, "ph": 7.35}, "amp": {"temp": 0.8, "do": 1.5, "ph": 0.3}}),
+     {"base": {"temp": 28.2, "do": 7.2, "ph": 7.35}, "amp": {"temp": 0.8, "do": 1.5, "ph": 0.3}}),
     ("Basin 2", "tilapia", 160, 3800, 18200, 8700, 1100, 2400,
-     {"base": {"temp": 28.6, "do": 6.7, "ph": 8.22}, "amp": {"temp": 0.9, "do": 1.5, "ph": 0.3}}),
+     {"base": {"temp": 28.6, "do": 7.0, "ph": 8.22}, "amp": {"temp": 0.9, "do": 1.5, "ph": 0.3}}),
     ("Basin 3", "rainbow_trout", 140, 2600, 24800, 9800, 1900, 3100,
      {"base": {"temp": 17.6, "do": 7.3, "ph": 7.2}, "amp": {"temp": 0.6, "do": 1.6, "ph": 0.2},
       "night_dip": {"from": 2.8, "to": 5.6, "depth": 0.28}}),
     ("Basin 4", "common_carp", 200, 3100, 12600, 5900, 900, 2200,
-     {"base": {"temp": 26.1, "do": 6.4, "ph": 7.6}, "amp": {"temp": 1.0, "do": 1.7, "ph": 0.3}}),
+     {"base": {"temp": 26.1, "do": 7.0, "ph": 7.6}, "amp": {"temp": 1.0, "do": 1.7, "ph": 0.3}}),
 ]
 
 TEAM = [

@@ -22,7 +22,7 @@ class Settings(BaseSettings):
 
     # simulator / pipeline
     sim_interval_seconds: float = 6.0
-    sim_spike_prob: float = 0.08
+    sim_spike_prob: float = 0.0015  # per 6 s tick ≈ one spike an hour; 0.08 = stress test
     sim_dirty_prob: float = 0.05
     sim_fault_prob: float = 0.0005
 
